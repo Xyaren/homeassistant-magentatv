@@ -1,0 +1,34 @@
+{
+  "domain": "magentatv",
+  "name": "MagentaTV",
+  "codeowners": [
+    "@xyaren"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "ssdp",
+    "upnp"
+  ],
+  "documentation": "https://github.com/Xyaren/homeassistant-magentatv",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/Xyaren/homeassistant-magentatv/issues",
+  "loggers": [
+    "custom_components.magnetatv",
+    "magnetatv"
+  ],
+  "requirements": [],
+  "ssdp": [
+    {
+      "deviceType": "urn:schemas-upnp-org:device:MediaRenderer:1",
+      "modelName": "MR401B_ACN",
+      "manufacturer": "Huawei Technologies Co.,Ltd"
+    },
+    {
+      "deviceType": "urn:schemas-upnp-org:device:MediaRenderer:1",
+      "modelName": "MR201_ACN",
+      "manufacturer": "Huawei Technologies Co.,Ltd"
+    }
+  ],
+  "version": "0.0.0"
+}
