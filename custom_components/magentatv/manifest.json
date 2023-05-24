@@ -5,10 +5,21 @@
     "@xyaren"
   ],
   "config_flow": true,
+  "dependencies": [
+    "ssdp"
+  ],
   "ssdp": [
     {
-      "manufacturer": "Huawei Technologies Co.,Ltd",
-      "deviceType": "urn:schemas-upnp-org:device:MediaRenderer:1"
+      "st": "urn:schemas-upnp-org:device:MediaRenderer:1"
+    },
+    {
+      "nt": "urn:schemas-upnp-org:device:MediaRenderer:1"
+    },
+    {
+      "nt": "urn:zenterio-com:device:mediashare:1"
+    },
+    {
+      "nt": "urn:zenterio-com:service:mediashare:1"
     }
   ],
   "documentation": "https://github.com/Xyaren/homeassistant-magentatv",
@@ -19,7 +30,6 @@
     "custom_components.magnetatv",
     "magnetatv"
   ],
-  "requirements": [
-  ],
+  "requirements": [],
   "version": "0.0.0"
 }
