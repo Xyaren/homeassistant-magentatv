@@ -1,0 +1,18 @@
+author:
+  email: xyaren@users.noreply.github.com
+  homepage: https://github.com/Xyaren/homeassistant-magentatv
+  name: xyaren
+description: MagentaTV
+files:
+  - custom_components/magentatv/__init__.py
+keywords:
+  - magentatv
+  - entertain
+  - mediareceiver
+  - homeassistant
+  - home-assistant
+  - custom-component
+  - python
+license: MIT License
+name: magentatv
+type: component
