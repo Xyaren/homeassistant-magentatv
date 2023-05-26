@@ -10,20 +10,18 @@
   ],
   "ssdp": [
     {
-      "st": "urn:schemas-upnp-org:device:MediaRenderer:1"
+      "deviceType": "urn:schemas-upnp-org:device:MediaRenderer:1",
+      "modelName": "MR401B_ACN",
+      "manufacturer": "Huawei Technologies Co.,Ltd"
     },
     {
-      "nt": "urn:schemas-upnp-org:device:MediaRenderer:1"
-    },
-    {
-      "nt": "urn:zenterio-com:device:mediashare:1"
-    },
-    {
-      "nt": "urn:zenterio-com:service:mediashare:1"
+      "deviceType": "urn:schemas-upnp-org:device:MediaRenderer:1",
+      "modelName": "MR201_ACN",
+      "manufacturer": "Huawei Technologies Co.,Ltd"
     }
   ],
   "documentation": "https://github.com/Xyaren/homeassistant-magentatv",
-  "integration_type": "hub",
+  "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/Xyaren/homeassistant-magentatv/issues",
   "loggers": [
