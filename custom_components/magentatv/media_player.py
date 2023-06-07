@@ -20,7 +20,6 @@ from homeassistant.const import (
 )
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers import instance_id
-from homeassistant.components import network
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -36,8 +35,8 @@ SUPPORTED_FEATURES = (
     | MediaPlayerEntityFeature.TURN_ON
 )
 
-SCAN_INTERVAL = timedelta(seconds=10)
-PARALLEL_UPDATES = 1
+SCAN_INTERVAL = timedelta(minutes=2)  # only backup in case events have been missed
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
@@ -64,7 +63,7 @@ async def async_setup_entry(
     )
 
     entities.append(MediaReceiver(config_entry=config_entry, client=_client))
-    async_add_entities(entities, update_before_add=True)
+    async_add_entities(entities, update_before_add=False)
 
 
 class MediaReceiver(MediaPlayerEntity):
@@ -75,6 +74,7 @@ class MediaReceiver(MediaPlayerEntity):
 
     def __init__(self, config_entry: ConfigEntry, client: PairingClient) -> None:
         """Initialize the device."""
+
         self.client = client
 
         self._attr_unique_id = config_entry.data.get(CONF_ID)
@@ -117,12 +117,15 @@ class MediaReceiver(MediaPlayerEntity):
         await self.client.async_start()
         await self.client.async_pair()
 
-        data = await self.client.async_get_player_state()
-        self._last_event_play_content = PlayContentEvent(**data)
+        await self.async_update()
         self.async_write_ha_state()
 
     async def async_will_remove_from_hass(self) -> None:
         await self.client.async_stop()
+
+    async def async_update(self) -> None:
+        data = await self.client.async_get_player_state()
+        self._last_event_play_content = PlayContentEvent(**data)
 
     @property
     def state(self) -> MediaPlayerState | None:
