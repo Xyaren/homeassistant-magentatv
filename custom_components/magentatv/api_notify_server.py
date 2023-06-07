@@ -5,7 +5,7 @@ import asyncio
 import socket
 import uuid
 from http import HTTPStatus
-from typing import Awaitable, Callable, List, Mapping, Tuple
+from collections.abc import Awaitable, Callable, Mapping
 
 import aiohttp
 import defusedxml.ElementTree as DET
@@ -20,14 +20,15 @@ Callback = Callable[[Mapping[str, str]], Awaitable[None]]
 class NotifyServer:
     """Notify Server API Client."""
 
-    _subscription_registry: Mapping[str, List[Tuple[str, str, str, Callback]]] = {}
+    _subscription_registry: Mapping[str, list[tuple[str, str, str, Callback]]] = {}
     _resubscribe_task: asyncio.Task = None
 
     def __init__(
         self, source_ip: str, source_port: int = 0, timeout: int = 300
     ) -> None:
         """Sample API Client.
-        Telekom uses 8058 as local port"""
+        Telekom uses 8058 as local port.
+        """
 
         assert source_ip is not None
         assert source_port is not None
@@ -53,7 +54,7 @@ class NotifyServer:
         self._resubscribe_task = None
 
     @staticmethod
-    def create_socket(source_ip, port_range=Tuple[int, int]):
+    def create_socket(source_ip, port_range=tuple[int, int]):
         port, max_port = port_range
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         while port <= max_port:
@@ -63,10 +64,10 @@ class NotifyServer:
                 return port, sock
             except OSError:
                 port += 1
-        raise IOError("no free ports")
+        raise OSError("no free ports")
 
     async def async_subscribe_to_services(
-        self, target, services: List[str], callback
+        self, target, services: list[str], callback
     ) -> str:
         registration_id = str(uuid.uuid4())
         registrations = self._subscription_registry.get(registration_id, [])

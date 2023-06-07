@@ -1,4 +1,3 @@
-from typing import List
 from pydantic import BaseModel, Field
 
 
@@ -9,14 +8,13 @@ def _to_camel(string: str) -> str:
 
 
 class EventModel(BaseModel):
-    """
-    Pydantic baseclass with overloaded operator for
+    """Pydantic baseclass with overloaded operator for
     instantiating new objects.
     """
 
     def __new__(cls, *args, **kwargs):
         """Be careful when using this method:
-        https://docs.python.org/3/reference/datamodel.html#object.__new__
+        https://docs.python.org/3/reference/datamodel.html#object.__new__.
         """
         # If all args are none -> do nothing
         if all(v is None for v in args) and all(v is None for v in kwargs.values()):
@@ -51,7 +49,7 @@ class ProgramInfo(EventModel):
     duration: str
     running_status: int
     free_ca_mode: bool = Field(False, alias="free_CA_mode")
-    short_event: List[ShortEvent]
+    short_event: list[ShortEvent]
 
 
 class EitChangedEvent(EventModel):
@@ -60,4 +58,4 @@ class EitChangedEvent(EventModel):
     channel_code: str
     channel_num: str
     media_id: str = Field(alias="mediaId")
-    program_info: List[ProgramInfo]
+    program_info: list[ProgramInfo]

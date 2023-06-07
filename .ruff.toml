@@ -3,10 +3,10 @@
 target-version = "py310"
 
 select = [
-    "B007",    # Loop control variable {name} not used within loop body
-    "B014",    # Exception handler with duplicate exception
-    "C",       # complexity
-    "D",       # docstrings
+    "B007", # Loop control variable {name} not used within loop body
+    "B014", # Exception handler with duplicate exception
+    "C",    # complexity
+    #"D",       # docstrings #TODO reenable
     "E",       # pycodestyle
     "F",       # pyflakes/autoflake
     "ICN001",  # import concentions; {name} should be imported as {asname}
@@ -30,12 +30,12 @@ ignore = [
     "D202", # No blank lines allowed after function docstring
     "D203", # 1 blank line required before class docstring
     "D213", # Multi-line docstring summary should start at the second line
-    "D404", # First word of the docstring should not be This
     "D406", # Section name should end with a newline
     "D407", # Section name underlining
-    "D411", # Missing blank line before section
     "E501", # line too long
     "E731", # do not assign a lambda expression, use a def
+    # Ignored due to performance: https://github.com/charliermarsh/ruff/issues/2923
+    "UP038", # Use `X | Y` in `isinstance` call instead of `(X, Y)`
 ]
 
 [flake8-pytest-style]

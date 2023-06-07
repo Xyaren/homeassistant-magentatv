@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Mapping, cast
+from typing import Any, cast
+from collections.abc import Mapping
 from urllib.parse import urlparse
-import aiohttp
 
 import voluptuous as vol
-from homeassistant import config_entries, data_entry_flow
-from homeassistant.components import ssdp, upnp
+from homeassistant import config_entries
+from homeassistant.components import ssdp
 from homeassistant.const import (
     CONF_HOST,
     CONF_UNIQUE_ID,

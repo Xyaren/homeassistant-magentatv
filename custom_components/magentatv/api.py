@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-from typing import List, Mapping, Tuple
+from collections.abc import Mapping
 
 from async_upnp_client.aiohttp import AiohttpRequester
 from async_upnp_client.utils import get_local_ip
@@ -66,7 +66,7 @@ class PairingClient(NotifyServer):
     async def async_subscribe(self, callback) -> str:
         return self._listeners.append(callback)
 
-    async def _async_subscribe_to_services(self, services: List[str], callback) -> str:
+    async def _async_subscribe_to_services(self, services: list[str], callback) -> str:
         return await super().async_subscribe_to_services(
             (self._host, self._port), services, callback
         )
@@ -144,7 +144,7 @@ class PairingClient(NotifyServer):
 
     async def _async_send_upnp_soap(
         self, service: str, action: str, attributes: Mapping[str, str]
-    ) -> Tuple[int, Mapping, str]:
+    ) -> tuple[int, Mapping, str]:
         attributes = "".join([f"   <{k}>{v}</{k}>\n" for k, v in attributes.items()])
         full_body = (
             '<?xml version="1.0" encoding="utf-8"?>\n'
