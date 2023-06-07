@@ -1,4 +1,4 @@
-name: "Lint"
+name: "CI"
 
 on:
   push:
@@ -9,8 +9,8 @@ on:
       - "main"
 
 jobs:
-  ruff:
-    name: "Ruff"
+  ci:
+    name: "CI"
     runs-on: "ubuntu-latest"
     steps:
         - name: "Checkout the repository"
@@ -23,7 +23,10 @@ jobs:
             cache: "pip"
 
         - name: "Install requirements"
-          run: python3 -m pip install -r requirements.txt
+          run: pip install -r requirements.dev.txt
 
-        - name: "Run"
-          run: python3 -m ruff check .
+        - name: "Lint"
+          run: ruff --format=github check .
+
+        - name: "Test"
+          run: pytest tests.py --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
