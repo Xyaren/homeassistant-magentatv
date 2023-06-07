@@ -6,7 +6,9 @@
   ],
   "config_flow": true,
   "dependencies": [
-    "ssdp"
+    "ssdp",
+    "network",
+    "upnp"
   ],
   "ssdp": [
     {
