@@ -17,7 +17,9 @@
     "custom_components.magnetatv",
     "magnetatv"
   ],
-  "requirements": [],
+  "requirements": [
+    "pydantic==1.10.9"
+  ],
   "ssdp": [
     {
       "deviceType": "urn:schemas-upnp-org:device:MediaRenderer:1",

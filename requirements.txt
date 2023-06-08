@@ -1,1 +1,2 @@
-homeassistant==2023.6.0b4
+homeassistant==2023.6.0
+pydantic==1.10.9

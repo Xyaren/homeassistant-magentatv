@@ -1,14 +1,24 @@
 """Adds config flow for Blueprint."""
 from __future__ import annotations
-
+import aiohttp
 import asyncio
 from typing import Any, cast
 from collections.abc import Mapping
 from urllib.parse import urlparse
-
+import xml.etree.ElementTree as ET
 import voluptuous as vol
+
+from async_upnp_client.aiohttp import AiohttpSessionRequester
+from async_upnp_client.const import (
+    AddressTupleVXType,
+    DeviceIcon,
+    DeviceInfo,
+    DeviceOrServiceType,
+    SsdpSource,
+)
+from async_upnp_client.description_cache import DescriptionCache
 from homeassistant import config_entries
-from homeassistant.components import ssdp
+from homeassistant.components import ssdp, upnp
 from homeassistant.const import (
     CONF_HOST,
     CONF_UNIQUE_ID,
@@ -21,6 +31,7 @@ from homeassistant.const import (
 )
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import instance_id, selector
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import PairingClient
 from .const import DOMAIN, LOGGER
@@ -106,6 +117,48 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         return discoveries
 
+    async def _async_identify_device(self) -> FlowResult:
+        session = async_get_clientsession(self.hass, verify_ssl=False)
+        requester = AiohttpSessionRequester(session, True, 10)
+        description_cache = DescriptionCache(requester)
+        url = "http://" + self.host + ":" + str(self.port) + "/xml/xctc.xml"
+        device_attributes = await description_cache.async_get_description_dict(
+            location=url
+        )
+
+        self._udn = device_attributes.get(ssdp.ATTR_UPNP_UDN)
+        self.friendly_name = device_attributes.get(ssdp.ATTR_UPNP_FRIENDLY_NAME)
+        self.model_name = device_attributes.get(ssdp.ATTR_UPNP_MODEL_NAME)
+        self.model_number = device_attributes.get(ssdp.ATTR_UPNP_MODEL_NUMBER)
+        self.manufacturer = device_attributes.get(ssdp.ATTR_UPNP_MANUFACTURER)
+
+        self.descriptor_url = url
+
+        assert self._udn is not None
+        assert self.friendly_name is not None
+        assert self.model_name is not None
+        assert self.model_number is not None
+        assert self.host is not None
+        assert self.port is not None
+
+        await self.async_set_unique_id(self._udn, raise_on_progress=False)
+
+        self._abort_if_unique_id_configured(
+            updates={
+                CONF_HOST: self.host,
+                CONF_PORT: self.port,
+                CONF_MODEL: self.model_name + "/" + self.model_number,
+                CONF_TYPE: "Media Receiver",
+                "manufacturer": self.manufacturer,
+                CONF_ID: self._udn,
+                CONF_UNIQUE_ID: self._udn,
+                CONF_URL: self.descriptor_url,
+            },
+            reload_on_update=False,
+        )
+
+        return await self.async_step_enter_user_id()
+
     async def async_step_manual(self, user_input: FlowInput = None) -> FlowResult:
         """Manual URL entry by the user."""
         LOGGER.debug("async_step_manual: user_input: %s", user_input)
@@ -115,12 +168,12 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self.host = user_input[CONF_HOST]
             self.port = user_input[CONF_PORT]
-            # try:
-            errors["base"] = "Not Implemented"  # TODO Implement setup by host + port
-            # except ConnectError as err:
-            #    errors["base"] = err.args[0]
-            # else:
-            #    return self._create_entry()
+
+            # self.user_id = user_input[CONF_USERNAME]
+            try:
+                return await self._async_identify_device()
+            except NotImplementedError as err:
+                errors["base"] = str(err)
 
         data_schema = vol.Schema({CONF_HOST: str, CONF_PORT: int})
 
@@ -156,11 +209,14 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         abort_if_configured: bool = True,
     ) -> None:
         """Set information required for a config entry from the SSDP discovery."""
-        self._udn = discovery_info.upnp.get(ssdp.ATTR_UPNP_UDN)
-        self.friendly_name = discovery_info.upnp.get(ssdp.ATTR_UPNP_FRIENDLY_NAME)
-        self.model_name = discovery_info.upnp.get(ssdp.ATTR_UPNP_MODEL_NAME)
-        self.model_number = discovery_info.upnp.get(ssdp.ATTR_UPNP_MODEL_NUMBER)
-        self.manufacturer = discovery_info.upnp.get(ssdp.ATTR_UPNP_MANUFACTURER)
+
+        device_attributes = discovery_info.upnp
+
+        self._udn = device_attributes.get(ssdp.ATTR_UPNP_UDN)
+        self.friendly_name = device_attributes.get(ssdp.ATTR_UPNP_FRIENDLY_NAME)
+        self.model_name = device_attributes.get(ssdp.ATTR_UPNP_MODEL_NAME)
+        self.model_number = device_attributes.get(ssdp.ATTR_UPNP_MODEL_NUMBER)
+        self.manufacturer = device_attributes.get(ssdp.ATTR_UPNP_MANUFACTURER)
 
         assert discovery_info.ssdp_location is not None
         self.descriptor_url = discovery_info.ssdp_location
@@ -283,6 +339,8 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         if self.last_error is None and user_input is not None:
             self.user_id = user_input[CONF_USERNAME]
+
+            self.hass.data.setdefault(DOMAIN, {})
             self.hass.data[DOMAIN][CONF_USERNAME] = self.user_id
             return await self.async_step_pair()
 
