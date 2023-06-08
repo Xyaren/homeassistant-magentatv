@@ -29,10 +29,13 @@ _Integration to integrate with media receivers for Telekom MagentaTV._
 
 ### HACS (Recommended)
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=xyaren&repository=homeassistant-magentatv&category=integration)
+
+or
+
 1. Install [HACS](https://hacs.xyz/)
 1. Add `https://github.com/Xyaren/homeassistant-magentatv` as a [custom repository](https://hacs.xyz/docs/faq/custom_repositories)
 1. Restart Home Assistant
-1. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "MagentaTV"
 
 ### Manual
 
@@ -42,9 +45,8 @@ _Integration to integrate with media receivers for Telekom MagentaTV._
 1. Download _all_ the files from the `custom_components/homeassistant-magentatv/` directory (folder) in this repository.
 1. Place the files you downloaded in the new directory (folder) you created.
 1. Restart Home Assistant
-1. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "MagentaTV"
 
-## Configuration is done in the UI
+## Adding a Receiver
 
 1. Optain your Telekom user id
     - TODO
