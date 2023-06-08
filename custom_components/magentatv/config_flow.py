@@ -31,8 +31,34 @@ FlowInput = Mapping[str, Any] | None
 ST = "urn:schemas-upnp-org:device:MediaRenderer:1"
 
 
+# Config Flow:
+#
+# ┌───────────────────┐  ┌───────────────┐       ┌───────────────┐
+# │async_step_unignore│  │async_step_ssdp│       │async_step_user│
+# │                   │  │               │       │               │
+# │on unignore by user│  │SSDP discovery │       │user triggered │
+# └────────────────┬──┘  └───────┬───────┘       └─┬────────┬────┘
+#                  │             │        Select Device     │No Selection
+#                  │             │        from List│        │
+#            ┌─────▼─────────────▼─────┐           │  ┌─────▼───────────┐
+#            │async_step_enter_user_id │◄──────────┘  │async_step_manual│
+#            │                         │              │                 │
+#            │request user_id from user│◄────Check────┤  enter host+IP  │
+#            └─────────────┬───────────┘              └─────────────────┘
+#                          │
+#                    Enter User Id
+#                          │
+#                ┌─────────▼─────────┐
+#                │  async_step_pair  │
+#                │                   │
+#                │Test Device Pairing│
+#                └─────────┬─────────┘
+#                          │
+#                ┌─────────▼─────────┐
+#                │ async_step_finish │
+#                └───────────────────┘
 class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow for MagentaTv."""
+    """Config flow for MagentaTV."""
 
     VERSION = 1
 
