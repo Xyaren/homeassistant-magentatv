@@ -9,7 +9,7 @@
     "ssdp",
     "upnp"
   ],
-  "documentation": "https://github.com/Xyaren/homeassistant-magentatv",
+  "documentation": "https://github.com/Xyaren/homeassistant-magentatv#adding-a-receiver",
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/Xyaren/homeassistant-magentatv/issues",

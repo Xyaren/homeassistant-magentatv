@@ -10,6 +10,12 @@
 
 _Integration to integrate with media receivers for Telekom MagentaTV._
 
+## Disclaimer
+
+This project is at a very early stage.
+Please reports bugs and request features to improve it over time.
+Feel free to contribute!
+
 ## Currently Supported Devices
 
 - Telekom Media Receiver 401
