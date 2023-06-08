@@ -85,6 +85,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = vol.Schema(
             {vol.Optional(CONF_HOST): vol.In(self._discoveries.keys())}
         )
+        # TODO: Finish form (title,labels etc)
         return self.async_show_form(step_id="user", data_schema=data_schema)
 
     async def _async_get_discoveries(self) -> list[ssdp.SsdpServiceInfo]:
@@ -122,6 +123,8 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             #    return self._create_entry()
 
         data_schema = vol.Schema({CONF_HOST: str, CONF_PORT: int})
+
+        # TODO: Finish form (title,labels etc)
         return self.async_show_form(
             step_id="manual", data_schema=data_schema, errors=errors
         )
@@ -260,6 +263,8 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 return self.async_show_progress_done(next_step_id="pair")
             else:
                 self.task_pair = self.hass.async_create_task(self._async_task_pair())
+
+                # TODO: Finish form (title,labels etc)
                 return self.async_show_progress(
                     step_id="pair", progress_action="pairing"
                 )
@@ -291,6 +296,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             or None
         )
 
+        # TODO: Finish form (title,labels etc)
         return self.async_show_form(
             step_id="enter_user_id",
             data_schema=vol.Schema(
