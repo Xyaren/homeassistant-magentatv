@@ -62,13 +62,12 @@ or
 
 1. Get your Telekom user id
    This id is required for paring the integration with your receiver. It therefore has to belong to the same account, the receiver is running on.
-    - Go to (web.magentatv.de/einstellungen/system)[https://web.magentatv.de/einstellungen/system]
+    - Go to [web.magentatv.de/einstellungen/system](https://web.magentatv.de/einstellungen/system)
     - Login
-    - Copy your `ANID` from the system info
-      ![Screenshot of the settings screen in magenta tv web settings.](https://i.imgur.com/wY0u7JL.png)
+    - Copy your `ANID` from the system info [Screeenshot](https://i.imgur.com/wY0u7JL.png)
 1. Configure a receiver
-    - Detected by auto discovery at your (integrations dashboard)[https://my.home-assistant.io/redirect/integrations/]
-    - Manually via (Add Integration)[https://my.home-assistant.io/redirect/config_flow_start/?domain=magentatv] )
+    - Detected by auto discovery at your [integrations dashboard](https://my.home-assistant.io/redirect/integrations/)
+    - Manually via [Add Integration](https://my.home-assistant.io/redirect/config_flow_start/?domain=magentatv)
 1. Provide your user id from step 1.
 1. Wait for the paring to finish (No confirmation on the tv neccecary)
 1. Confirm adding the device and optionally assign it an area within homeassistant
@@ -77,10 +76,10 @@ or
 
 ## Thanks
 
-Thanks for (@humbertogontijo)[https://github.com/humbertogontijo] from (homeassistant-roborock)[https://github.com/humbertogontijo/homeassistant-roborock] for providing the inspiration to create an integration on my own.
+Thanks for [@humbertogontijo]8https://github.com/humbertogontijo) from [homeassistant-roborock](https://github.com/humbertogontijo/homeassistant-roborock) for providing the inspiration to create an integration on my own.
 Also serving as a reference repository on how to do things.
 
-Also many thanks to (@ludeeus)[https://github.com/ludeeus] for (integration_blueprint)[https://github.com/ludeeus/integration_blueprint]
+Also many thanks to [@ludeeus](https://github.com/ludeeus) for [integration_blueprint](https://github.com/ludeeus/integration_blueprint)
 
 ## Contributions are welcome!
 
