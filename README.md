@@ -49,7 +49,7 @@ If you want to contribute to this please read the [Contribution guidelines](CONT
 
 [homeassistant-magentatv]: https://github.com/xyaren/homeassistant-magentatv
 [buymecoffee]: https://www.buymeacoffee.com/xyaren
-[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
+[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20slice%20of%20pizza-donate-yellow.svg?style=for-the-badge
 [commits-shield]: https://img.shields.io/github/commit-activity/y/xyaren/homeassistant-magentatv.svg?style=for-the-badge
 [commits]: https://github.com/xyaren/homeassistant-magentatv/commits/main
 [hacs]: https://github.com/hacs/integration
