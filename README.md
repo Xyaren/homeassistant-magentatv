@@ -73,6 +73,13 @@ or
 
 <!---->
 
+## Thanks
+
+Thanks for (@humbertogontijo)[https://github.com/humbertogontijo] from (homeassistant-roborock)[https://github.com/humbertogontijo/homeassistant-roborock] for providing the inspiration to create an integration on my own.
+Also serving as a reference repository on how to do things.
+
+Also many thanks to (@ludeeus)[https://github.com/ludeeus] for (integration_blueprint)[https://github.com/ludeeus/integration_blueprint]
+
 ## Contributions are welcome!
 
 If you want to contribute to this please read the [Contribution guidelines](CONTRIBUTING.md)
