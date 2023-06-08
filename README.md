@@ -25,11 +25,17 @@ Feel free to contribute!
 
 ### Current
 
+- Autodiscovery of media receivers within the local network
 - See current (TV) playing status
 
 ### Planned
 
-- Send Button Presses to the receiver (Remote Control)
+- Manual setup of a media receiver via host/ip and port
+- Send Button Presses to the receiver (Remote Control via Homeassistant Service)
+- Add MediaPlayer Controls like play/pause/mute etc
+- Support more models
+- Detect if App (Youtube/Prime/Netflix() is currently active on the receiver
+- (Unknwon if possible) Start apps like Youtube/Netflix from Homeassistant
 
 ## Installation
 
