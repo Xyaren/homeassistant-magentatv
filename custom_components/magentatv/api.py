@@ -88,8 +88,9 @@ class PairingClient(NotifyServer):
                 await self._async_send_pairing_request()
                 LOGGER.info("Waiting for Pairing Code")
                 await asyncio.wait_for(self._pairing_event.wait(), timeout=5)
-                LOGGER.info("Waiting for Pairing Code")
+                LOGGER.info("Received Pairing Code")
                 await self._async_verify_pairing()
+                LOGGER.info("Pairing Verified. Success !")
             except (
                 asyncio.CancelledError,
                 asyncio.TimeoutError,

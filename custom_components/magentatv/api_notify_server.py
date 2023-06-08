@@ -92,7 +92,9 @@ class NotifyServer:
             body=None,
         )
         assert response[0] == 200
-        return response[1]["SID"]
+        sid = response[1]["SID"]
+        LOGGER.debug("Subscribed %s on %s at %s", sid, service, target)
+        return sid
 
     async def _async_resubscribe(self, target, service, sid) -> str:
         response = await self._requester.async_http_request(
@@ -117,6 +119,7 @@ class NotifyServer:
             body=None,
         )
         assert response[0] in [200, 412]
+        LOGGER.debug("Unsubscribed %s on %s at %s", sid, service, target)
 
     async def async_stop(self):
         LOGGER.info("Stopping")
@@ -182,6 +185,7 @@ class NotifyServer:
         self._resubscribe_task = loop.create_task(self._async_resubscribe_all())
 
     async def _async_unsubscribe_all(self):
+        LOGGER.debug("Unsubscribing all subscriptions")
         for subscriptions in self._subscription_registry.values():
             for sub in subscriptions:
                 target, service, sid, _ = sub

@@ -1,24 +1,15 @@
 """Adds config flow for Blueprint."""
 from __future__ import annotations
-import aiohttp
 import asyncio
 from typing import Any, cast
 from collections.abc import Mapping
 from urllib.parse import urlparse
-import xml.etree.ElementTree as ET
 import voluptuous as vol
 
 from async_upnp_client.aiohttp import AiohttpSessionRequester
-from async_upnp_client.const import (
-    AddressTupleVXType,
-    DeviceIcon,
-    DeviceInfo,
-    DeviceOrServiceType,
-    SsdpSource,
-)
 from async_upnp_client.description_cache import DescriptionCache
 from homeassistant import config_entries
-from homeassistant.components import ssdp, upnp
+from homeassistant.components import ssdp
 from homeassistant.const import (
     CONF_HOST,
     CONF_UNIQUE_ID,
@@ -80,7 +71,9 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 return await self.async_step_manual()
             # User has chosen a device, ask for confirmation
             discovery = self._discoveries[host]
-            await self._async_set_info_from_discovery(discovery)
+            await self._async_set_info_from_discovery(
+                discovery, abort_if_configured=True, raise_on_progress=False
+            )
             return await self.async_step_enter_user_id()
 
         if not (discoveries := await self._async_get_discoveries()):
@@ -195,7 +188,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         )
         if discovery:
             await self._async_set_info_from_discovery(
-                discovery, abort_if_configured=False
+                discovery, abort_if_configured=True, raise_on_progress=False
             )
             self.context["title_placeholders"] = {"name": self.friendly_name}
 
@@ -206,6 +199,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def _async_set_info_from_discovery(
         self,
         discovery_info: ssdp.SsdpServiceInfo,
+        raise_on_progress: bool = True,
         abort_if_configured: bool = True,
     ) -> None:
         """Set information required for a config entry from the SSDP discovery."""
@@ -232,7 +226,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         assert self.host is not None
         assert self.port is not None
 
-        await self.async_set_unique_id(self._udn, raise_on_progress=abort_if_configured)
+        await self.async_set_unique_id(self._udn, raise_on_progress=raise_on_progress)
 
         if abort_if_configured:
             self._abort_if_unique_id_configured(
@@ -257,7 +251,9 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         LOGGER.debug("async_step_ssdp %s", discovery_info)
 
         await self._async_set_info_from_discovery(
-            discovery_info=discovery_info, abort_if_configured=True
+            discovery_info=discovery_info,
+            abort_if_configured=True,
+            raise_on_progress=True,
         )
 
         self.context.update(
