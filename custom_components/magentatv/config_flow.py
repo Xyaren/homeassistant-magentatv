@@ -111,28 +111,19 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         return discoveries
 
     async def _async_identify_device(self) -> FlowResult:
+        assert self.host is not None
+        assert self.port is not None
+
         session = async_get_clientsession(self.hass, verify_ssl=False)
         requester = AiohttpSessionRequester(session, True, 10)
         description_cache = DescriptionCache(requester)
+
         url = "http://" + self.host + ":" + str(self.port) + "/xml/xctc.xml"
         device_attributes = await description_cache.async_get_description_dict(
             location=url
         )
-
-        self._udn = device_attributes.get(ssdp.ATTR_UPNP_UDN)
-        self.friendly_name = device_attributes.get(ssdp.ATTR_UPNP_FRIENDLY_NAME)
-        self.model_name = device_attributes.get(ssdp.ATTR_UPNP_MODEL_NAME)
-        self.model_number = device_attributes.get(ssdp.ATTR_UPNP_MODEL_NUMBER)
-        self.manufacturer = device_attributes.get(ssdp.ATTR_UPNP_MANUFACTURER)
-
         self.descriptor_url = url
-
-        assert self._udn is not None
-        assert self.friendly_name is not None
-        assert self.model_name is not None
-        assert self.model_number is not None
-        assert self.host is not None
-        assert self.port is not None
+        self._set_from_upnp(device_attributes)
 
         await self.async_set_unique_id(self._udn, raise_on_progress=False)
 
@@ -196,6 +187,19 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         else:
             return self.async_abort(reason="discovery_error")
 
+    def _set_from_upnp(self, device_info: Mapping[str, Any]):
+        self._udn = device_info.get(ssdp.ATTR_UPNP_UDN)
+        self.friendly_name = device_info.get(ssdp.ATTR_UPNP_FRIENDLY_NAME)
+        self.model_name = device_info.get(ssdp.ATTR_UPNP_MODEL_NAME)
+        self.model_number = device_info.get(ssdp.ATTR_UPNP_MODEL_NUMBER)
+        self.manufacturer = device_info.get(ssdp.ATTR_UPNP_MANUFACTURER)
+
+        assert self._udn is not None
+        assert self.friendly_name is not None
+        assert self.model_name is not None
+        assert self.model_number is not None
+        assert self.manufacturer is not None
+
     async def _async_set_info_from_discovery(
         self,
         discovery_info: ssdp.SsdpServiceInfo,
@@ -204,27 +208,16 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> None:
         """Set information required for a config entry from the SSDP discovery."""
 
-        device_attributes = discovery_info.upnp
-
-        self._udn = device_attributes.get(ssdp.ATTR_UPNP_UDN)
-        self.friendly_name = device_attributes.get(ssdp.ATTR_UPNP_FRIENDLY_NAME)
-        self.model_name = device_attributes.get(ssdp.ATTR_UPNP_MODEL_NAME)
-        self.model_number = device_attributes.get(ssdp.ATTR_UPNP_MODEL_NUMBER)
-        self.manufacturer = device_attributes.get(ssdp.ATTR_UPNP_MANUFACTURER)
-
-        assert discovery_info.ssdp_location is not None
-        self.descriptor_url = discovery_info.ssdp_location
-
         parsed_location = urlparse(discovery_info.ssdp_location)
         self.host = parsed_location.hostname
         self.port = parsed_location.port
-
-        assert self._udn is not None
-        assert self.friendly_name is not None
-        assert self.model_name is not None
-        assert self.model_number is not None
         assert self.host is not None
         assert self.port is not None
+
+        assert discovery_info.ssdp_location is not None
+        self.descriptor_url = discovery_info.ssdp_location
+        assert self.descriptor_url is not None
+        self._set_from_upnp(discovery_info.upnp)
 
         await self.async_set_unique_id(self._udn, raise_on_progress=raise_on_progress)
 
@@ -304,7 +297,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_UNIQUE_ID: self._udn,
                 CONF_URL: self.descriptor_url,
                 "user_id": self.user_id,
-                "verification_code": self.verification_code,
+                # "verification_code": self.verification_code,
             },
         )
 
