@@ -1,11 +1,10 @@
-<img alt="logo" align="right" width="400"  src="https://upload.wikimedia.org/wikipedia/commons/1/13/Magenta_TV_Logo_%282021%29.svg">
+<img alt="logo" align="right" width="400" height="150" src="https://upload.wikimedia.org/wikipedia/commons/1/13/Magenta_TV_Logo_%282021%29.svg">
 
 # Homeassistant MagentaTV Integration
 
 [![GitHub Release][releases-shield]][releases]
 [![GitHub Activity][commits-shield]][commits]
 [![License][license-shield]](LICENSE)
-
 [![hacs][hacsbadge]][hacs]
 ![Project Maintenance][maintenance-shield]
 [![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
