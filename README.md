@@ -61,9 +61,11 @@ or
 ## Adding a Receiver
 
 1. Get your Telekom user id
+   This id is required for paring the integration with your receiver. It therefore has to belong to the same account, the receiver is running on.
     - Go to (web.magentatv.de/einstellungen/system)[https://web.magentatv.de/einstellungen/system]
     - Login
-    - Copy your `ANID`
+    - Copy your `ANID` from the system info
+      ![Screenshot of the settings screen in magenta tv web settings.](https://i.imgur.com/wY0u7JL.png)
 1. Configure a receiver
     - Detected by auto discovery at your (integrations dashboard)[https://my.home-assistant.io/redirect/integrations/]
     - Manually via (Add Integration)[https://my.home-assistant.io/redirect/config_flow_start/?domain=magentatv] )
