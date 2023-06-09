@@ -304,6 +304,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 instance_id=await instance_id.async_get(self.hass),
             )
             await client.async_start()
+
             self.verification_code = await client.async_pair()
             # A task that take some time to complete.
         except asyncio.exceptions.TimeoutError:
@@ -346,7 +347,9 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
                 # TODO: Finish form (title,labels etc)
                 return self.async_show_progress(
-                    step_id="pair", progress_action="pairing"
+                    step_id="pair",
+                    progress_action="wait_for_pairing",
+                    description_placeholders={"name": self.friendly_name},
                 )
         else:
             # verification code is present -> pairing done

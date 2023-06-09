@@ -8,6 +8,9 @@
                     "username": "User Id (ANID)"
                 }
             },
+            "pair": {
+                "title": "MagentaTV: Pairing Receiver"
+            },
             "user": {
                 "title": "MagentaTV: Select Receiver",
                 "description": "The Homeassistant MagentaTV detected the following devices on your network. Either select one of the devices or continue to setup manually",
@@ -23,6 +26,9 @@
                     "port": "Port"
                 }
             }
+        },
+        "progress": {
+            "wait_for_pairing": "Please wait while the integrations attempts pairing with the receiver: {name}"
         },
         "error": {}
     }
