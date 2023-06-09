@@ -1,18 +1,29 @@
 {
     "config": {
         "step": {
-            "user": {
-                "description": "If you need help with the configuration have a look here: https://github.com/xyaren/magentatv",
+            "enter_user_id": {
+                "title": "MagentaTV: {name} - Configure User Id",
+                "description": "For Homeassistant MagentaTV to connect to your media receiver you will need to provide your user id.\n Follow these steps to find your personal user id:\n 1. Navigate to [web.magentatv.de/einstellungen/system](https://web.magentatv.de/einstellungen/system)\n 2. Login using the same account that the receiver is using\n 3. Copy your `ANID` from the system info tab and paste it into the field below",
                 "data": {
-                    "username": "Username",
-                    "password": "Password"
+                    "username": "User Id (ANID)"
+                }
+            },
+            "user": {
+                "title": "MagentaTV: Select Receiver",
+                "description": "The Homeassistant MagentaTV detected the following devices on your network. Either select one of the devices or continue to setup manually",
+                "data": {
+                    "host": "Receiver"
+                }
+            },
+            "manual": {
+                "title": "MagentaTV: Enter Receiver Details",
+                "description": "Please provide your reciever connection details",
+                "data": {
+                    "host": "Hostname/IP",
+                    "port": "Port"
                 }
             }
         },
-        "error": {
-            "auth": "Username/Password is wrong.",
-            "connection": "Unable to connect to the server.",
-            "unknown": "Unknown error occurred."
-        }
+        "error": {}
     }
 }

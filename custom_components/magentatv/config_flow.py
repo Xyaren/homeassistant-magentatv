@@ -6,6 +6,8 @@ from collections.abc import Mapping
 from urllib.parse import urlparse
 import voluptuous as vol
 
+import homeassistant.helpers.config_validation as cv
+
 from async_upnp_client.aiohttp import AiohttpSessionRequester
 from async_upnp_client.description_cache import DescriptionCache
 from homeassistant import config_entries
@@ -116,7 +118,9 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             {vol.Optional(CONF_HOST): vol.In(self._discoveries.keys())}
         )
         # TODO: Finish form (title,labels etc)
-        return self.async_show_form(step_id="user", data_schema=data_schema)
+        return self.async_show_form(
+            step_id="user", data_schema=data_schema, last_step=False
+        )
 
     async def _async_get_discoveries(self) -> list[ssdp.SsdpServiceInfo]:
         """Get list of unconfigured DLNA devices discovered by SSDP."""
@@ -185,11 +189,16 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             except NotImplementedError as err:
                 errors["base"] = str(err)
 
-        data_schema = vol.Schema({CONF_HOST: str, CONF_PORT: int})
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_HOST): cv.string,
+                vol.Required(CONF_PORT, default=8081): cv.port,
+            }
+        )
 
         # TODO: Finish form (title,labels etc)
         return self.async_show_form(
-            step_id="manual", data_schema=data_schema, errors=errors
+            step_id="manual", data_schema=data_schema, errors=errors, last_step=False
         )
 
     async def async_step_unignore(self, user_input: Mapping[str, Any]) -> FlowResult:
@@ -377,14 +386,12 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(
                         CONF_USERNAME,
                         default=prefilled_user_id,
-                    ): selector.TextSelector(
-                        selector.TextSelectorConfig(
-                            type=selector.TextSelectorType.TEXT
-                        ),
-                    ),
+                    ): cv.string
                 }
             ),
+            description_placeholders={"name": self.friendly_name},
             errors=_errors,
+            last_step=False,
         )
 
     async def _async_find_existing_user_id(self) -> str | None:
