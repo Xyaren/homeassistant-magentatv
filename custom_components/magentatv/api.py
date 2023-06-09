@@ -9,7 +9,6 @@ from uuid import getnode as get_mac
 
 from async_upnp_client.aiohttp import AiohttpRequester
 from async_upnp_client.utils import get_local_ip
-from homeassistant.exceptions import PlatformNotReady
 
 from custom_components.magentatv.const import LOGGER
 
