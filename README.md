@@ -28,10 +28,10 @@ Feel free to contribute!
 
 - Autodiscovery of media receivers within the local network
 - See current (TV) playing status
+- Manual setup of a media receiver via host/ip and port
 
 ### Planned
-
-- Manual setup of a media receiver via host/ip and port
+- Configurable Port Range (For HA in Docker)
 - Send Button Presses to the receiver (Remote Control via Homeassistant Service)
 - Add MediaPlayer Controls like play/pause/mute etc
 - Support more models
