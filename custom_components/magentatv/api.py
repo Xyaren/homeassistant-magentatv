@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import xml.etree.ElementTree as ET
 from collections.abc import Mapping
+from uuid import getnode as get_mac
 
 from async_upnp_client.aiohttp import AiohttpRequester
 from async_upnp_client.utils import get_local_ip
@@ -12,10 +14,6 @@ from homeassistant.exceptions import PlatformNotReady
 from custom_components.magentatv.const import LOGGER
 
 from .api_notify_server import NotifyServer
-
-
-import xml.etree.ElementTree as ET
-from uuid import getnode as get_mac
 
 
 class PairingClient(NotifyServer):
@@ -87,7 +85,7 @@ class PairingClient(NotifyServer):
                 )
                 await self._async_send_pairing_request()
                 LOGGER.info("Waiting for Pairing Code")
-                await asyncio.wait_for(self._pairing_event.wait(), timeout=5)
+                await asyncio.wait_for(self._pairing_event.wait(), timeout=10)
                 LOGGER.info("Received Pairing Code")
                 await self._async_verify_pairing()
                 LOGGER.info("Pairing Verified. Success !")
@@ -96,7 +94,7 @@ class PairingClient(NotifyServer):
                 asyncio.TimeoutError,
             ) as ex:
                 LOGGER.warning("Pairing Issue", exc_info=ex)
-                raise PlatformNotReady() from ex
+                raise ex
 
         assert self._verification_code is not None
 

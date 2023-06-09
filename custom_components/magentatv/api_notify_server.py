@@ -4,8 +4,8 @@ from __future__ import annotations
 import asyncio
 import socket
 import uuid
-from http import HTTPStatus
 from collections.abc import Awaitable, Callable, Mapping
+from http import HTTPStatus
 
 import aiohttp
 import defusedxml.ElementTree as DET

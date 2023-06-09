@@ -1,29 +1,29 @@
 """Adds config flow for Blueprint."""
 from __future__ import annotations
+
 import asyncio
-from typing import Any, cast
 from collections.abc import Mapping
+from typing import Any, cast
 from urllib.parse import urlparse
-import voluptuous as vol
 
 import homeassistant.helpers.config_validation as cv
-
+import voluptuous as vol
 from async_upnp_client.aiohttp import AiohttpSessionRequester
 from async_upnp_client.description_cache import DescriptionCache
 from homeassistant import config_entries
 from homeassistant.components import ssdp
 from homeassistant.const import (
     CONF_HOST,
-    CONF_UNIQUE_ID,
     CONF_ID,
     CONF_MODEL,
     CONF_PORT,
     CONF_TYPE,
+    CONF_UNIQUE_ID,
     CONF_URL,
     CONF_USERNAME,
 )
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.helpers import instance_id, selector
+from homeassistant.helpers import instance_id
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import PairingClient
@@ -307,7 +307,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
             self.verification_code = await client.async_pair()
             # A task that take some time to complete.
-        except asyncio.exceptions.TimeoutError:
+        except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
             self.last_error = "timeout"
         finally:
             await client.async_stop()
@@ -337,20 +337,24 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             },
         )
 
+    async def async_step_pairing_failed(self, user_input=None) -> FlowResult:
+        return self.async_abort(reason="pairing_timeout")
+
     async def async_step_pair(self, user_input=None) -> FlowResult:
+        if self.last_error is not None:
+            return self.async_show_progress_done(next_step_id="pairing_failed")
+
         if not self.verification_code:
             # start async pairing process
-            if self.task_pair:
-                return self.async_show_progress_done(next_step_id="pair")
-            else:
+            if not self.task_pair:
                 self.task_pair = self.hass.async_create_task(self._async_task_pair())
 
                 # TODO: Finish form (title,labels etc)
-                return self.async_show_progress(
-                    step_id="pair",
-                    progress_action="wait_for_pairing",
-                    description_placeholders={"name": self.friendly_name},
-                )
+            return self.async_show_progress(
+                step_id="pair",
+                progress_action="wait_for_pairing",
+                description_placeholders={"name": self.friendly_name},
+            )
         else:
             # verification code is present -> pairing done
             return self.async_show_progress_done(next_step_id="finish")
