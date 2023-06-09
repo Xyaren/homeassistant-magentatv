@@ -6,8 +6,7 @@
   ],
   "config_flow": true,
   "dependencies": [
-    "ssdp",
-    "upnp"
+    "ssdp"
   ],
   "documentation": "https://github.com/Xyaren/homeassistant-magentatv#adding-a-receiver",
   "integration_type": "device",
@@ -18,7 +17,7 @@
     "magnetatv"
   ],
   "requirements": [
-    "pydantic==1.10.9"
+    "pydantic==1.10.8"
   ],
   "ssdp": [
     {
