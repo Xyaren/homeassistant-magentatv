@@ -4,7 +4,6 @@ from ast import List
 
 import asyncio
 import socket
-from typing import Dict, Tuple
 from collections.abc import Awaitable, Callable, Mapping
 from http import HTTPStatus
 
@@ -33,8 +32,8 @@ class NotifyServer:
     _aiohttp_server: web.Server | None
     _resubscribe_task: asyncio.Task = None
 
-    _subscription_registry: Dict[str, tuple[str, str, Callback]] = {}
-    _buffer: Dict[str, List[Mapping[str, str]]]
+    _subscription_registry: dict[str, tuple[str, str, Callback]] = {}
+    _buffer: dict[str, List[Mapping[str, str]]]
 
     def __init__(
         self, source_ip: str, source_port: int = 0, subscription_timeout: int = 300
@@ -69,7 +68,7 @@ class NotifyServer:
     @staticmethod
     def create_socket(
         source_ip, port_range=tuple[int, int]
-    ) -> Tuple[int, socket.socket]:
+    ) -> tuple[int, socket.socket]:
         port, max_port = port_range
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         while port <= max_port:
@@ -210,7 +209,7 @@ class NotifyServer:
 
     async def _async_unsubscribe_all(self):
         LOGGER.debug("Unsubscribing all subscriptions")
-        for sid in self._subscription_registry.keys():
+        for sid in self._subscription_registry:
             await self.async_unsubscribe(sid)
 
     async def _async_resubscribe_all(self):
