@@ -10,3 +10,5 @@ logger:
 #    async_upnp_client: debug
 debugpy:
 #ssdp:
+magentatv:
+  ports: 1200 - 1400

@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 from datetime import timedelta
 
+from async_upnp_client.utils import get_local_ip
 from homeassistant.components.media_player import (
     MediaPlayerEntity,
     MediaPlayerEntityFeature,
@@ -23,8 +24,9 @@ from homeassistant.helpers import instance_id
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .api import PairingClient
-from .api_event import EitChangedEvent, PlayContentEvent
+from custom_components.magentatv.api.api_notify_server import NotifyServer
+
+from .api import EitChangedEvent, PairingClient, PlayContentEvent
 from .const import DOMAIN, LOGGER
 
 SUPPORTED_FEATURES = (
@@ -47,22 +49,33 @@ async def async_setup_entry(
     """Set up the receiver from a config entry."""
     entities = []
 
+    _host = config_entry.data.get(CONF_HOST)
+    _port = config_entry.data.get(CONF_PORT)
+    _url = "http://" + _host + ":" + str(_port)
+
+    _notify_server = NotifyServer(source_ip=get_local_ip(_url))
     _client = PairingClient(
-        host=config_entry.data.get(CONF_HOST),
-        port=config_entry.data.get(CONF_PORT),
+        host=_host,
+        port=_port,
         user_id=config_entry.data.get("user_id"),
         instance_id=(await instance_id.async_get(hass)),
+        notify_server=_notify_server,
     )
 
     async def async_close_connection(event: Event) -> None:
         """Close connection on HA Stop."""
-        await _client.async_stop()
+        await _client.async_close()
+        await _notify_server.async_stop()
 
     config_entry.async_on_unload(
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, async_close_connection)
     )
 
-    entities.append(MediaReceiver(config_entry=config_entry, client=_client))
+    entities.append(
+        MediaReceiver(
+            config_entry=config_entry, client=_client, notify_server=_notify_server
+        )
+    )
     async_add_entities(entities, update_before_add=False)
 
 
@@ -72,10 +85,19 @@ class MediaReceiver(MediaPlayerEntity):
     _last_event_eit_changed: EitChangedEvent | None
     _last_event_play_content: PlayContentEvent | None
 
-    def __init__(self, config_entry: ConfigEntry, client: PairingClient) -> None:
+    _client: PairingClient
+    _notify_server: NotifyServer
+
+    def __init__(
+        self,
+        config_entry: ConfigEntry,
+        client: PairingClient,
+        notify_server: NotifyServer,
+    ) -> None:
         """Initialize the device."""
 
-        self.client = client
+        self._client = client
+        self._notify_server = notify_server
 
         self._attr_unique_id = config_entry.data.get(CONF_ID)
         self._attr_name = config_entry.title
@@ -113,18 +135,24 @@ class MediaReceiver(MediaPlayerEntity):
     async def async_added_to_hass(self) -> None:
         """Register for telnet events."""
 
-        await self.client.async_subscribe(self._async_on_event)
-        await self.client.async_start()
-        await self.client.async_pair()
+        await self._notify_server.async_start()
 
+        # subscibe for player events
+        self._client.subscribe(self._async_on_event)
+
+        await self._client.async_pair()
+
+        # trigger manual update
         await self.async_update()
         self.async_write_ha_state()
 
     async def async_will_remove_from_hass(self) -> None:
-        await self.client.async_stop()
+        await self._client.async_close()
+        await self._notify_server.async_stop()
 
     async def async_update(self) -> None:
-        data = await self.client.async_get_player_state()
+        data = await self._client.async_get_player_state()
+        LOGGER.debug("New Data Response: %s", data)
         self._last_event_play_content = PlayContentEvent(**data)
 
     @property
@@ -132,17 +160,23 @@ class MediaReceiver(MediaPlayerEntity):
         """Return the state of the device."""
         try:
             _play_mode = self._last_event_play_content.new_play_mode
-            if _play_mode == 0:
-                self._last_event_eit_changed = None
-                # return MediaPlayerState.OFF
+            if _play_mode is not None:
+                if _play_mode == 0:
+                    self._last_event_eit_changed = None
+                    # return MediaPlayerState.OFF
+                    return MediaPlayerState.IDLE
+                elif _play_mode == 1:
+                    return MediaPlayerState.PAUSED
+                elif _play_mode in [2, 3, 4, 5]:
+                    return MediaPlayerState.PLAYING
+                elif _play_mode == 20:
+                    return MediaPlayerState.BUFFERING
                 return MediaPlayerState.IDLE
-            elif _play_mode == 1:
-                return MediaPlayerState.PAUSED
-            elif _play_mode in [2, 3, 4, 5]:
+            elif self._last_event_play_content.duration is not None:
+                # bad...
                 return MediaPlayerState.PLAYING
-            elif _play_mode == 20:
-                return MediaPlayerState.BUFFERING
-            return MediaPlayerState.IDLE
+            else:
+                return MediaPlayerState.IDLE
         except (NameError, AttributeError):
             return None
 

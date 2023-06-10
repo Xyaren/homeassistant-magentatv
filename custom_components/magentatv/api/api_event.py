@@ -1,12 +1,6 @@
 from pydantic import BaseModel, Field
 
 
-def _to_camel(string: str) -> str:
-    result = "".join(word.capitalize() for word in string.split("_"))
-    result = result[0].lower() + result[1:]
-    return result
-
-
 class EventModel(BaseModel):
     """Pydantic baseclass with overloaded operator for
     instantiating new objects.
@@ -24,7 +18,6 @@ class EventModel(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
-        # alias_generator = _to_camel
         allow_mutation = False
 
 

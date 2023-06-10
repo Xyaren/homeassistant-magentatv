@@ -10,6 +10,7 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from async_upnp_client.aiohttp import AiohttpSessionRequester
 from async_upnp_client.description_cache import DescriptionCache
+from async_upnp_client.utils import get_local_ip
 from homeassistant import config_entries
 from homeassistant.components import ssdp
 from homeassistant.const import (
@@ -25,6 +26,8 @@ from homeassistant.const import (
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import instance_id
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+from custom_components.magentatv.api.api_notify_server import NotifyServer
 
 from .api import PairingClient
 from .const import DOMAIN, LOGGER
@@ -296,29 +299,38 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         return await self.async_step_enter_user_id()
 
     async def _async_task_pair(self):
+        _notify_server = None
         try:
+            _url = "http://" + self.host + ":" + str(self.port)
+            _notify_server = NotifyServer(source_ip=get_local_ip(_url))
             client = PairingClient(
                 host=self.host,
                 port=self.port,
                 user_id=self.user_id,
                 instance_id=await instance_id.async_get(self.hass),
+                notify_server=_notify_server,
             )
-            await client.async_start()
+            await _notify_server.async_start()
 
             self.verification_code = await client.async_pair()
             # A task that take some time to complete.
         except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
             self.last_error = "timeout"
+        except Exception as err:
+            LOGGER.error("Error during pairing", exc_info=err)
+            self.last_error = "unknown"
         finally:
-            await client.async_stop()
+            if client is not None:
+                await client.async_close()
+                await _notify_server.async_stop()
 
-        # Continue the flow after show progress when the task is done.
-        # To avoid a potential deadlock we create a new task that continues the flow.
-        # The task must be completely done so the flow can await the task
-        # if needed and get the task result.
-        self.hass.async_create_task(
-            self.hass.config_entries.flow.async_configure(flow_id=self.flow_id)
-        )
+            # Continue the flow after show progress when the task is done.
+            # To avoid a potential deadlock we create a new task that continues the flow.
+            # The task must be completely done so the flow can await the task
+            # if needed and get the task result.
+            self.hass.async_create_task(
+                self.hass.config_entries.flow.async_configure(flow_id=self.flow_id)
+            )
 
     async def async_step_finish(self, user_input=None):
         return self.async_create_entry(
@@ -408,3 +420,9 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 if user_id is not None:
                     return user_id
         return None
+
+
+CONFIG_SCHEMA: vol.Schema = vol.Schema(
+    {DOMAIN: vol.Schema({vol.Optional("port_range", default="1024-1100"): str})},
+    extra=vol.PREVENT_EXTRA,
+)

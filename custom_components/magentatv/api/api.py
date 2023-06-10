@@ -5,34 +5,42 @@ import asyncio
 import hashlib
 import xml.etree.ElementTree as ET
 from collections.abc import Mapping
-from uuid import getnode as get_mac
 
 from async_upnp_client.aiohttp import AiohttpRequester
 from async_upnp_client.utils import get_local_ip
 
-from custom_components.magentatv.const import LOGGER
+from .const import LOGGER
 
 from .api_notify_server import NotifyServer
 
 
-class PairingClient(NotifyServer):
+class PairingClient:
     """Sample API Client."""
 
-    def __init__(self, host: str, port: int, user_id: str, instance_id: str) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        user_id: str,
+        instance_id: str,
+        notify_server: NotifyServer | None = None,
+    ) -> None:
         """Sample API Client."""
         self._host = host
         self._port = port
-        self._url = "http://" + self._host + ":" + str(self._port)  # + "/xml/xctc.xml"
+        self._url = "http://" + self._host + ":" + str(self._port)
 
-        super().__init__(source_ip=get_local_ip(target_url=self._url))
-
-        mac = get_mac()
-        self._terminal_id = (
-            hashlib.md5(("%012X" % mac).encode("UTF-8")).hexdigest().upper()
+        self._notify_server = notify_server or NotifyServer(
+            source_ip=get_local_ip(target_url=self._url)
         )
+
+        # mac = get_mac()
         # self._terminal_id = (
-        #    hashlib.md5((instance_id).encode("UTF-8")).hexdigest().upper()
+        #     hashlib.md5(("%012X" % mac).encode("UTF-8")).hexdigest().upper()
         # )
+        self._terminal_id = (
+            hashlib.md5((instance_id).encode("UTF-8")).hexdigest().upper()
+        )
 
         self._user_id = hashlib.md5(user_id.encode("UTF-8")).hexdigest().upper()
         self._requester = AiohttpRequester(
@@ -40,51 +48,63 @@ class PairingClient(NotifyServer):
                 # "User-Agent": "Darwin/16.5.0 UPnP/1.0 HUAWEI_iCOS/iCOS V1R1C00 DLNADOC/1.50"
             }
         )
-        self._pairing_event = asyncio.Event()
 
         self._verification_code = None
 
-        self._listeners = []
+        self._event_registration_id = None
+        self._event_listeners = []
 
-    async def _async_on_pair_event(self, changes):
-        if "messageBody" in changes:
-            pairing_code = changes.get("messageBody").removeprefix("X-pairingCheck:")
-            self._verification_code = (
-                hashlib.md5(
-                    (pairing_code + self._terminal_id + self._user_id).encode("UTF-8")
-                )
-                .hexdigest()
-                .upper()
-            )
-            self._pairing_event.set()
-        else:
-            asyncio.gather(*[listener(changes) for listener in self._listeners])
+    # async def _async_on_event(self, changes):
+    #     asyncio.gather(*[listener(changes) for listener in self._event_listeners])
 
-    async def async_subscribe(self, callback) -> str:
-        return self._listeners.append(callback)
+    def subscribe(self, callback):
+        if callback not in self._event_listeners:
+            self._event_listeners.append(callback)
 
-    async def _async_subscribe_to_services(self, services: list[str], callback) -> str:
-        return await super().async_subscribe_to_services(
-            (self._host, self._port), services, callback
-        )
+    async def async_close(self):
+        if self._event_registration_id:
+            await self._notify_server.async_unsubscribe(self._event_registration_id)
 
     async def async_pair(self) -> str:
-        while not self._pairing_event.is_set():
+        _pairing_event = asyncio.Event()
+
+        async def _async_on_pair_event(changes):
+            if _pairing_event.is_set():
+                asyncio.gather(
+                    *[listener(changes) for listener in self._event_listeners]
+                )
+            if "messageBody" in changes:
+                pairing_code = changes.get("messageBody").removeprefix(
+                    "X-pairingCheck:"
+                )
+                self._verification_code = (
+                    hashlib.md5(
+                        (pairing_code + self._terminal_id + self._user_id).encode(
+                            "UTF-8"
+                        )
+                    )
+                    .hexdigest()
+                    .upper()
+                )
+                _pairing_event.set()
+
+        while not _pairing_event.is_set():
             try:
-                await self._async_subscribe_to_services(
-                    [
+                self._event_registration_id = (
+                    await self._notify_server.async_subscribe_to_service(
+                        (self._host, self._port),
                         "X-CTC_RemotePairing",
-                        "X-CTC_OpenApp",
-                        "X-CTC_RemoteControl",
-                        "RenderingControl",
-                        "AVTransport",
-                        "ConnectionManager",
-                    ],
-                    self._async_on_pair_event,
+                        _async_on_pair_event,
+                    )
+                )
+                LOGGER.debug(
+                    "Event Registration ID of %s: %s",
+                    self._host,
+                    self._event_registration_id,
                 )
                 await self._async_send_pairing_request()
                 LOGGER.info("Waiting for Pairing Code")
-                await asyncio.wait_for(self._pairing_event.wait(), timeout=10)
+                await asyncio.wait_for(_pairing_event.wait(), timeout=10)
                 LOGGER.info("Received Pairing Code")
                 await self._async_verify_pairing()
                 LOGGER.info("Pairing Verified. Success !")

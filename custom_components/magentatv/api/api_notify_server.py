@@ -1,13 +1,16 @@
 """Sample API Client."""
 from __future__ import annotations
+from ast import List
 
 import asyncio
 import socket
-import uuid
+from typing import Dict, Tuple
 from collections.abc import Awaitable, Callable, Mapping
 from http import HTTPStatus
 
 import aiohttp
+from aiohttp import web
+
 import defusedxml.ElementTree as DET
 from async_upnp_client.aiohttp import AiohttpRequester
 from async_upnp_client.client import NS
@@ -20,11 +23,21 @@ Callback = Callable[[Mapping[str, str]], Awaitable[None]]
 class NotifyServer:
     """Notify Server API Client."""
 
-    _subscription_registry: Mapping[str, list[tuple[str, str, str, Callback]]] = {}
+    _source_ip: str
+    _source_port: int
+    _subscription_timeout: int
+
+    _requester: AiohttpRequester
+
+    _socket = socket.socket | None
+    _aiohttp_server: web.Server | None
     _resubscribe_task: asyncio.Task = None
 
+    _subscription_registry: Dict[str, tuple[str, str, Callback]] = {}
+    _buffer: Dict[str, List[Mapping[str, str]]]
+
     def __init__(
-        self, source_ip: str, source_port: int = 0, timeout: int = 300
+        self, source_ip: str, source_port: int = 0, subscription_timeout: int = 300
     ) -> None:
         """Sample API Client.
         Telekom uses 8058 as local port.
@@ -32,12 +45,11 @@ class NotifyServer:
 
         assert source_ip is not None
         assert source_port is not None
-        assert timeout > 5
+        assert subscription_timeout is not None
 
         self._source_ip = source_ip
         self._source_port = source_port
-
-        self._timeout = timeout
+        self._subscription_timeout = subscription_timeout
 
         self._requester = AiohttpRequester(
             http_headers={
@@ -49,12 +61,15 @@ class NotifyServer:
         self._aiohttp_server = None
         self._server = None
 
-        self._subscribed_services = {}
-        self._subscription_registry = {}
         self._resubscribe_task = None
 
+        self._subscription_registry = {}
+        self._buffer = {}
+
     @staticmethod
-    def create_socket(source_ip, port_range=tuple[int, int]):
+    def create_socket(
+        source_ip, port_range=tuple[int, int]
+    ) -> Tuple[int, socket.socket]:
         port, max_port = port_range
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         while port <= max_port:
@@ -64,20 +79,26 @@ class NotifyServer:
                 return port, sock
             except OSError:
                 port += 1
-        raise OSError("no free ports")
+        raise OSError("No free ports detected")
 
-    async def async_subscribe_to_services(
-        self, target, services: list[str], callback
+    async def async_subscribe_to_service(
+        self, target, service: str, callback: Callback
     ) -> str:
-        registration_id = str(uuid.uuid4())
-        registrations = self._subscription_registry.get(registration_id, [])
-        self._subscription_registry[registration_id] = registrations
+        sid = await self._async_subscribe(target, service)
+        self._subscription_registry[sid] = (target, service, callback)
 
-        for service in services:
-            if service not in [x[1] for x in registrations]:
-                sid = await self._async_subscribe(target, service)
-                registrations.append((target, service, sid, callback))
-        return registration_id
+        for changes in self._buffer.pop(sid, []):
+            callback(changes)
+
+        return sid
+
+    async def async_unsubscribe(self, sid: str):
+        target, service, _ = self._subscription_registry.pop(sid)
+        await self._async_unsubscribe(
+            target,
+            service,
+            sid,
+        )
 
     async def _async_subscribe(self, target, service) -> str:
         response = await self._requester.async_http_request(
@@ -85,7 +106,7 @@ class NotifyServer:
             url=f"http://{target[0]}:{target[1]}/upnp/service/{service}/Event",
             headers={
                 "NT": "upnp:event",
-                "TIMEOUT": f"Second-{self._timeout}",
+                "TIMEOUT": f"Second-{self._subscription_timeout}",
                 "HOST": f"{target[0]}:{target[1]}",
                 "CALLBACK": f"<http://{self._source_ip}:{self._source_port}/eventSub>",
             },
@@ -102,7 +123,7 @@ class NotifyServer:
             url=f"http://{target[0]}:{target[1]}/upnp/service/{service}/Event",
             headers={
                 "SID": sid,
-                "TIMEOUT": f"Second-{self._timeout}",
+                "TIMEOUT": f"Second-{self._subscription_timeout}",
             },
             body=None,
         )
@@ -122,14 +143,15 @@ class NotifyServer:
         LOGGER.debug("Unsubscribed %s on %s at %s", sid, service, target)
 
     async def async_stop(self):
-        LOGGER.info("Stopping")
+        LOGGER.info("Stopping Notify Server")
         if self._resubscribe_task:
             self._resubscribe_task.cancel()
+            self._resubscribe_task = None
 
         await self._async_unsubscribe_all()
 
         if self._aiohttp_server:
-            await self._aiohttp_server.shutdown(2)
+            await self._aiohttp_server.shutdown(5)
             self._aiohttp_server = None
 
         if self._server:
@@ -138,6 +160,9 @@ class NotifyServer:
 
         if self._socket:
             self._socket.close()
+            self._socket = None
+
+        self._buffer = {}
 
     async def async_start(self):
         if self._source_port == 0:
@@ -148,9 +173,11 @@ class NotifyServer:
             self._source_port, self._socket = NotifyServer.create_socket(
                 self._source_ip, (self._source_port, self._source_port)
             )
-
         _source = (self._source_ip, self._source_port)
-        self._aiohttp_server = aiohttp.web.Server(self._handle_request)
+
+        LOGGER.debug("Starting Notify Server on %s ...", _source)
+
+        self._aiohttp_server = web.Server(self._handle_request)
         try:
             self._server = await asyncio.get_event_loop().create_server(
                 self._aiohttp_server,
@@ -165,17 +192,14 @@ class NotifyServer:
                 _source[1],
                 err,
             )
-            raise Exception(
-                errno=err.errno,
-                strerror=err.strerror,
-            ) from err
+            raise err
 
         # Get listening port.
         socks = self._server.sockets
         assert socks and len(socks) == 1
         sock = socks[0]
         _source = sock.getsockname()
-        LOGGER.debug("New source for UpnpNotifyServer: %s", _source)
+        LOGGER.debug("Started Notify Server on %s", _source)
         self._source_ip, self._source_port = _source
 
         await self._start_resubscriber()
@@ -186,19 +210,14 @@ class NotifyServer:
 
     async def _async_unsubscribe_all(self):
         LOGGER.debug("Unsubscribing all subscriptions")
-        for subscriptions in self._subscription_registry.values():
-            for sub in subscriptions:
-                target, service, sid, _ = sub
-                await self._async_unsubscribe(target, service, sid)
-                subscriptions.remove(sub)
+        for sid in self._subscription_registry.keys():
+            await self.async_unsubscribe(sid)
 
     async def _async_resubscribe_all(self):
         while True:
-            await asyncio.sleep(self._timeout * 0.8)
-            for subscriptions in self._subscription_registry.values():
-                for sub in subscriptions:
-                    target, service, sid, _ = sub
-                    await self._async_resubscribe(target, service, sid)
+            await asyncio.sleep(self._subscription_timeout - 5)
+            for sid, (target, service, _) in self._subscription_registry.items():
+                await self._async_resubscribe(target, service, sid)
 
     async def _handle_request(
         self, request: aiohttp.web.BaseRequest
@@ -247,19 +266,17 @@ class NotifyServer:
                 value = el_state_var.text or ""
                 changes[name] = value
 
-        # send changes to service
-        # TODO detect service by SID
-        await self._notify_changed_state_variables(headers.get("SID"), changes)
+        await self._notify_subscribed_callbacks(headers.get("SID"), changes)
 
         return HTTPStatus.OK
 
-    async def _notify_changed_state_variables(
+    async def _notify_subscribed_callbacks(
         self, sid: str, changes
     ) -> Mapping[str, str]:
-        callbacks = [
-            sub[3](changes)
-            for subs in self._subscription_registry.values()
-            for sub in subs
-            if sub[2] == sid
-        ]
-        await asyncio.gather(*callbacks)
+        subscription = self._subscription_registry.get(sid)
+        if subscription:
+            (_, _, callback) = subscription
+            await callback(changes)
+        else:
+            # subscriber not yet subscribed -> save to buffer
+            self._buffer.setdefault(sid, []).append(changes)
