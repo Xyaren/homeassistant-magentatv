@@ -59,6 +59,11 @@ or
 1. Place the files you downloaded in the new directory (folder) you created.
 1. Restart Home Assistant
 
+
+## Docker considerations
+In order to receive events from the mediareceivers, the integration needs to create a server listening on port 11223.
+Make sure this port is reachable from the receivers. In case of homeassistant running in docker ( except running in `host` mode), this requires mapping port 11223 to the outside.
+
 ## Adding a Receiver
 
 1. Get your Telekom user id
@@ -73,7 +78,25 @@ or
 1. Wait for the paring to finish (No confirmation on the tv neccecary)
 1. Confirm adding the device and optionally assign it an area within homeassistant
 
-<!---->
+## Configuration
+You can control the used port and address used by the integration to receive events from the receivers using the yaml config.
+In most cases these are not required.
+```yaml
+magentatv:
+  ## Port for UPNP subscription callbacks, must be reachable from the media receivers.
+  ## For Homeassistant running in docker, this needs to be mapped.
+  ## Default: 11223
+  # port: 11223
+
+  ## Address to listen for UPNP subscription callbacks, must be reachable from the media receivers.
+  ## Default 0.0.0.0
+  # address: "0.0.0.0"
+
+  ## Telekom user id used as default for configuration flows. Optional.
+  ## Default None
+  # user_id: 1234567890123456789012
+```
+
 
 ## Thanks
 

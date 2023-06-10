@@ -7,7 +7,6 @@ import xml.etree.ElementTree as ET
 from collections.abc import Mapping
 
 from async_upnp_client.aiohttp import AiohttpRequester
-from async_upnp_client.utils import get_local_ip
 
 from .const import LOGGER
 
@@ -23,21 +22,15 @@ class PairingClient:
         port: int,
         user_id: str,
         instance_id: str,
-        notify_server: NotifyServer | None = None,
+        notify_server: NotifyServer,
     ) -> None:
         """Sample API Client."""
         self._host = host
         self._port = port
         self._url = "http://" + self._host + ":" + str(self._port)
 
-        self._notify_server = notify_server or NotifyServer(
-            source_ip=get_local_ip(target_url=self._url)
-        )
+        self._notify_server = notify_server
 
-        # mac = get_mac()
-        # self._terminal_id = (
-        #     hashlib.md5(("%012X" % mac).encode("UTF-8")).hexdigest().upper()
-        # )
         self._terminal_id = (
             hashlib.md5((instance_id).encode("UTF-8")).hexdigest().upper()
         )
@@ -45,6 +38,7 @@ class PairingClient:
         self._user_id = hashlib.md5(user_id.encode("UTF-8")).hexdigest().upper()
         self._requester = AiohttpRequester(
             http_headers={
+                "User-Agent": "Homeassistant MagentaTV Integration"
                 # "User-Agent": "Darwin/16.5.0 UPnP/1.0 HUAWEI_iCOS/iCOS V1R1C00 DLNADOC/1.50"
             }
         )

@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 from datetime import timedelta
 
-from async_upnp_client.utils import get_local_ip
 from homeassistant.components.media_player import (
     MediaPlayerEntity,
     MediaPlayerEntityFeature,
@@ -27,7 +26,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from custom_components.magentatv.api.api_notify_server import NotifyServer
 
 from .api import EitChangedEvent, PairingClient, PlayContentEvent
-from .const import DOMAIN, LOGGER
+from .const import CONF_USER_ID, DATA_NOTIFICATION_SERVER, DOMAIN, LOGGER
 
 SUPPORTED_FEATURES = (
     MediaPlayerEntityFeature.PLAY
@@ -51,21 +50,18 @@ async def async_setup_entry(
 
     _host = config_entry.data.get(CONF_HOST)
     _port = config_entry.data.get(CONF_PORT)
-    _url = "http://" + _host + ":" + str(_port)
 
-    _notify_server = NotifyServer(source_ip=get_local_ip(_url))
     _client = PairingClient(
         host=_host,
         port=_port,
-        user_id=config_entry.data.get("user_id"),
+        user_id=config_entry.data.get(CONF_USER_ID),
         instance_id=(await instance_id.async_get(hass)),
-        notify_server=_notify_server,
+        notify_server=hass.data[DOMAIN][DATA_NOTIFICATION_SERVER],
     )
 
     async def async_close_connection(event: Event) -> None:
         """Close connection on HA Stop."""
         await _client.async_close()
-        await _notify_server.async_stop()
 
     config_entry.async_on_unload(
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, async_close_connection)
@@ -73,7 +69,8 @@ async def async_setup_entry(
 
     entities.append(
         MediaReceiver(
-            config_entry=config_entry, client=_client, notify_server=_notify_server
+            config_entry=config_entry,
+            client=_client,  # notify_server=_notify_server
         )
     )
     async_add_entities(entities, update_before_add=False)
@@ -92,12 +89,12 @@ class MediaReceiver(MediaPlayerEntity):
         self,
         config_entry: ConfigEntry,
         client: PairingClient,
-        notify_server: NotifyServer,
+        # notify_server: NotifyServer,
     ) -> None:
         """Initialize the device."""
 
         self._client = client
-        self._notify_server = notify_server
+        # self._notify_server = notify_server
 
         self._attr_unique_id = config_entry.data.get(CONF_ID)
         self._attr_name = config_entry.title
@@ -135,7 +132,7 @@ class MediaReceiver(MediaPlayerEntity):
     async def async_added_to_hass(self) -> None:
         """Register for telnet events."""
 
-        await self._notify_server.async_start()
+        # await self._notify_server.async_start()
 
         # subscibe for player events
         self._client.subscribe(self._async_on_event)
@@ -148,7 +145,7 @@ class MediaReceiver(MediaPlayerEntity):
 
     async def async_will_remove_from_hass(self) -> None:
         await self._client.async_close()
-        await self._notify_server.async_stop()
+        # await self._notify_server.async_stop()
 
     async def async_update(self) -> None:
         data = await self._client.async_get_player_state()

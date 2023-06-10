@@ -10,5 +10,18 @@ logger:
 #    async_upnp_client: debug
 debugpy:
 #ssdp:
+
+
 magentatv:
-  ports: 1200 - 1400
+  ## Port for UPNP subscription callbacks, must be reachable from the media receivers.
+  ## For Homeassistant running in docker, this needs to be mapped.
+  ## Default: 11224
+  port: 11224
+
+  ## Address to listen for UPNP subscription callbacks, must be reachable from the media receivers.
+  ## Default 0.0.0.0
+  # address: "0.0.0.0"
+
+  ## Telekom user id used as default for configuration flows. Optional.
+  ## Default None
+  user_id: 120049010000000017944901

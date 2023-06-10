@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Mapping
+import re
 from typing import Any, cast
 from urllib.parse import urlparse
 
@@ -10,7 +11,6 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from async_upnp_client.aiohttp import AiohttpSessionRequester
 from async_upnp_client.description_cache import DescriptionCache
-from async_upnp_client.utils import get_local_ip
 from homeassistant import config_entries
 from homeassistant.components import ssdp
 from homeassistant.const import (
@@ -30,7 +30,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from custom_components.magentatv.api.api_notify_server import NotifyServer
 
 from .api import PairingClient
-from .const import DOMAIN, LOGGER
+from .const import CONF_USER_ID, DATA_NOTIFICATION_SERVER, DATA_USER_ID, DOMAIN, LOGGER
 
 FlowInput = Mapping[str, Any] | None
 ST = "urn:schemas-upnp-org:device:MediaRenderer:1"
@@ -127,7 +127,6 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _async_get_discoveries(self) -> list[ssdp.SsdpServiceInfo]:
         """Get list of unconfigured DLNA devices discovered by SSDP."""
-        LOGGER.debug("_get_discoveries")
 
         # Get all compatible devices from ssdp's cache
         discoveries = await ssdp.async_get_discovery_info_by_st(self.hass, ST)
@@ -299,10 +298,8 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         return await self.async_step_enter_user_id()
 
     async def _async_task_pair(self):
-        _notify_server = None
         try:
-            _url = "http://" + self.host + ":" + str(self.port)
-            _notify_server = NotifyServer(source_ip=get_local_ip(_url))
+            _notify_server = self.hass.data[DOMAIN][DATA_NOTIFICATION_SERVER]
             client = PairingClient(
                 host=self.host,
                 port=self.port,
@@ -310,7 +307,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 instance_id=await instance_id.async_get(self.hass),
                 notify_server=_notify_server,
             )
-            await _notify_server.async_start()
+            # await _notify_server.async_start()
 
             self.verification_code = await client.async_pair()
             # A task that take some time to complete.
@@ -322,7 +319,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         finally:
             if client is not None:
                 await client.async_close()
-                await _notify_server.async_stop()
+                # await _notify_server.async_stop()
 
             # Continue the flow after show progress when the task is done.
             # To avoid a potential deadlock we create a new task that continues the flow.
@@ -344,7 +341,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_ID: self._udn,
                 CONF_UNIQUE_ID: self._udn,
                 CONF_URL: self.descriptor_url,
-                "user_id": self.user_id,
+                CONF_USER_ID: self.user_id,
                 # "verification_code": self.verification_code,
             },
         )
@@ -377,14 +374,14 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Allow the user to enter his user id adding the device."""
 
         self._abort_if_unique_id_configured()
+        self.hass.data.setdefault(DOMAIN, {})
 
         _errors = {}
 
         if self.last_error is None and user_input is not None:
-            self.user_id = user_input[CONF_USERNAME]
+            self.user_id = user_input[CONF_USER_ID]
 
-            self.hass.data.setdefault(DOMAIN, {})
-            self.hass.data[DOMAIN][CONF_USERNAME] = self.user_id
+            self.hass.data[DOMAIN][CONF_USER_ID] = self.user_id
             return await self.async_step_pair()
 
         if self.last_error:
@@ -392,10 +389,13 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             self.last_error = None
 
         prefilled_user_id = (
-            (user_input or {}).get(CONF_USERNAME, None)
-            or await self._async_find_existing_user_id()
+            (user_input or {}).get(CONF_USER_ID, None)  # already entered
+            or self.hass.data[DOMAIN].get(DATA_USER_ID, None)  # yaml config (via data)
+            or await self._async_find_existing_user_id()  # already configured entries
             or None
         )
+        if prefilled_user_id is not None:
+            prefilled_user_id = str(prefilled_user_id)
 
         # TODO: Finish form (title,labels etc)
         return self.async_show_form(
@@ -403,9 +403,9 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        CONF_USERNAME,
+                        CONF_USER_ID,
                         default=prefilled_user_id,
-                    ): cv.string
+                    ): str
                 }
             ),
             description_placeholders={"name": self.friendly_name},
@@ -413,16 +413,10 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             last_step=False,
         )
 
-    async def _async_find_existing_user_id(self) -> str | None:
+    async def _async_find_existing_user_id(self) -> int | None:
         for entry in self.hass.config_entries.async_entries(domain=DOMAIN):
             if entry.data is not None:
-                user_id = entry.data.get("user_id", None)
+                user_id = entry.data.get(CONF_USER_ID, None)
                 if user_id is not None:
                     return user_id
         return None
-
-
-CONFIG_SCHEMA: vol.Schema = vol.Schema(
-    {DOMAIN: vol.Schema({vol.Optional("port_range", default="1024-1100"): str})},
-    extra=vol.PREVENT_EXTRA,
-)
