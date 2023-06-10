@@ -1,6 +1,6 @@
 import json
 
-from custom_components.magentatv.api_event import EitChangedEvent, PlayContentEvent
+from custom_components.magentatv.api import EitChangedEvent, PlayContentEvent
 
 
 def test_play_content_event_event_deserializes():
