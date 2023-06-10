@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Mapping
-import re
 from typing import Any, cast
 from urllib.parse import urlparse
 
@@ -21,13 +20,11 @@ from homeassistant.const import (
     CONF_TYPE,
     CONF_UNIQUE_ID,
     CONF_URL,
-    CONF_USERNAME,
 )
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import instance_id
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from custom_components.magentatv.api.api_notify_server import NotifyServer
 
 from .api import PairingClient
 from .const import CONF_USER_ID, DATA_NOTIFICATION_SERVER, DATA_USER_ID, DOMAIN, LOGGER
