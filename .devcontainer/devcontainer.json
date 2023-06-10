@@ -20,7 +20,11 @@
         "ms-python.python",
         "github.vscode-pull-request-github",
         "ryanluker.vscode-coverage-gutters",
-        "ms-python.vscode-pylance"
+        "ms-python.vscode-pylance",
+        "ms-python.isort",
+        "ms-python.black-formatter",
+        "ms-python.pylint",
+        "github.vscode-github-actions"
       ],
       "settings": {
         "files.eol": "\n",

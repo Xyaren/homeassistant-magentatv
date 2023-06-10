@@ -17,7 +17,8 @@
     "magnetatv"
   ],
   "requirements": [
-    "pydantic==1.10.8"
+    "pydantic==1.10.8",
+    "async_upnp_client==0.33.2"
   ],
   "ssdp": [
     {
