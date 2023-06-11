@@ -4,6 +4,8 @@ For more details about this integration, please refer to
 https://github.com/xyaren/magentatv
 """
 from __future__ import annotations
+from asyncio import Lock
+from math import e
 
 
 import homeassistant.helpers.config_validation as cv
@@ -19,10 +21,16 @@ from homeassistant.helpers.typing import ConfigType
 from custom_components.magentatv.api.api_notify_server import NotifyServer
 
 from .const import (
-    CONF_ADDRESS,
-    CONF_PORT,
+    CONF_ADVERTISE_ADDRESS,
+    CONF_ADVERTISE_PORT,
+    CONF_LISTEN_ADDRESS,
+    CONF_LISTEN_PORT,
     CONF_USER_ID,
+    DATA_ADVERTISE_ADDRESS,
+    DATA_ADVERTISE_PORT,
+    DATA_LISTEN_ADDRESS,
     DATA_NOTIFICATION_SERVER,
+    DATA_LISTEN_PORT,
     DATA_USER_ID,
     DOMAIN,
     LOGGER,
@@ -41,8 +49,10 @@ CONFIG_SCHEMA: vol.Schema = vol.Schema(
     {
         DOMAIN: vol.Schema(
             {
-                vol.Optional(CONF_PORT, default="11223"): cv.port,
-                vol.Optional(CONF_ADDRESS, default="0.0.0.0"): str,
+                vol.Optional(CONF_LISTEN_PORT, default="11223"): cv.port,
+                vol.Optional(CONF_LISTEN_ADDRESS, default="0.0.0.0"): str,
+                vol.Optional(CONF_ADVERTISE_PORT): cv.port,
+                vol.Optional(CONF_ADVERTISE_ADDRESS): str,
                 vol.Optional(CONF_USER_ID): int,  # optional -> not required to
             },
             extra=vol.PREVENT_EXTRA,
@@ -52,15 +62,23 @@ CONFIG_SCHEMA: vol.Schema = vol.Schema(
 )
 
 
-async def async_setup(hass: HomeAssistant, entry: ConfigType | None):
+async def async_setup(hass: HomeAssistant, entry: ConfigType):
+    LOGGER.info("MagentaTV setup")
+
     # Return boolean to indicate that initialization was successful.
     domain_data = hass.data.setdefault(DOMAIN, {})
     config = entry[DOMAIN]
 
-    if CONF_USER_ID in config:
-        domain_data.setdefault(DATA_USER_ID, config[CONF_USER_ID])
-
-    domain_data[DATA_NOTIFICATION_SERVER] = _create_notify_server(hass, config)
+    mapping = {
+        CONF_USER_ID: DATA_USER_ID,
+        CONF_LISTEN_ADDRESS: DATA_LISTEN_ADDRESS,
+        CONF_LISTEN_PORT: DATA_LISTEN_PORT,
+        CONF_ADVERTISE_ADDRESS: DATA_ADVERTISE_ADDRESS,
+        CONF_ADVERTISE_PORT: DATA_ADVERTISE_PORT,
+    }
+    for k, v in mapping.items():
+        if k in config:
+            domain_data.setdefault(v, config[k])
 
     return True
 
@@ -68,6 +86,8 @@ async def async_setup(hass: HomeAssistant, entry: ConfigType | None):
 # https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up this integration using UI."""
+    LOGGER.info("MagentaTV setup entry")
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
@@ -78,16 +98,32 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
-def _create_notify_server(hass: HomeAssistant, config: ConfigType) -> NotifyServer:
-    LOGGER.info("Setup Notify Server for MagentaTV")
+notification_server_lock = Lock()
 
-    notify_server = NotifyServer(
-        source_ip=config[CONF_ADDRESS], source_port=config[CONF_PORT]
-    )
 
-    async def async_close_connection(_: Event) -> None:
-        """Close connection on HA Stop."""
-        await notify_server.async_stop()
+async def async_get_notification_server(hass: HomeAssistant) -> NotifyServer:
+    async with notification_server_lock:
+        domain_data = hass.data.setdefault(DOMAIN, {})
+        if DATA_NOTIFICATION_SERVER in domain_data:
+            return domain_data[DATA_NOTIFICATION_SERVER]
+        else:
+            LOGGER.info("Setup Notify Server for MagentaTV")
 
-    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, async_close_connection)
-    return notify_server
+            domain_data[DATA_NOTIFICATION_SERVER] = notify_server = NotifyServer(
+                listen=(
+                    domain_data.get(DATA_LISTEN_ADDRESS, "0.0.0.0"),
+                    domain_data.get(DATA_LISTEN_PORT, 11223),
+                ),
+                advertise=(
+                    domain_data.get(DATA_ADVERTISE_ADDRESS, None),
+                    domain_data.get(DATA_ADVERTISE_PORT, None),
+                ),
+            )
+
+            async def async_close_connection(_: Event) -> None:
+                """Close connection on HA Stop."""
+                await notify_server.async_stop()
+
+            hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, async_close_connection)
+
+            return notify_server

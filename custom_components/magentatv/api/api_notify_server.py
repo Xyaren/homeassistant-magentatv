@@ -21,8 +21,9 @@ Callback = Callable[[Mapping[str, str]], Awaitable[None]]
 class NotifyServer:
     """Notification server listening for subscribed events and invoking the corresponding callbacks"""
 
-    _source_ip: str
-    _source_port: int
+    _listen_ip_port = (tuple[str, int],)
+    _advertise_ip_port = tuple[str | None, int | None] | None
+
     _subscription_timeout: int
 
     _requester: AiohttpRequester
@@ -39,20 +40,20 @@ class NotifyServer:
 
     def __init__(
         self,
-        source_ip: str,
-        source_port: int,
+        listen: tuple[str, int],
+        advertise: tuple[str | None, int | None] | None = None,
         subscription_timeout: int = 300,
     ) -> None:
         """Sample API Client.
         Telekom uses 8058 as local port.
         """
 
-        assert source_ip is not None
-        assert source_port is not None
+        assert listen is not None
         assert subscription_timeout is not None
 
-        self._source_ip = source_ip
-        self._source_port = source_port
+        self._listen_ip_port = listen
+        self._advertise_ip_port = advertise
+
         self._subscription_timeout = subscription_timeout
 
         self._requester = AiohttpRequester(
@@ -107,7 +108,12 @@ class NotifyServer:
 
     async def _async_subscribe(self, target, service) -> str:
         url = f"http://{target[0]}:{target[1]}/upnp/service/{service}/Event"
-        local_ip = get_local_ip(target_url=url)
+
+        adv_host, adv_port = self._advertise_ip_port or (None, None)
+        if adv_host is None:
+            adv_host = get_local_ip(target_url=url)
+        if adv_port is None:
+            adv_port = self._listen_ip_port[1]
 
         response = await self._requester.async_http_request(
             method="SUBSCRIBE",
@@ -116,7 +122,7 @@ class NotifyServer:
                 "NT": "upnp:event",
                 "TIMEOUT": f"Second-{self._subscription_timeout}",
                 "HOST": f"{target[0]}:{target[1]}",
-                "CALLBACK": f"<http://{local_ip}:{self._source_port}/eventSub>",
+                "CALLBACK": f"<http://{adv_host}:{adv_port}/eventSub>",
             },
             body=None,
         )
@@ -200,12 +206,9 @@ class NotifyServer:
                 # already running
                 return
 
-            self._socket = NotifyServer.create_socket(
-                self._source_ip, self._source_port
-            )
-            _source = (self._source_ip, self._source_port)
+            self._socket = NotifyServer.create_socket(*self._listen_ip_port)
 
-            LOGGER.debug("Starting Notify Server on %s ...", _source)
+            LOGGER.debug("Starting Notify Server on %s:%s ...", *self._listen_ip_port)
 
             self._aiohttp_server = web.Server(self._handle_request)
             try:
@@ -218,19 +221,10 @@ class NotifyServer:
             except OSError as err:
                 LOGGER.error(
                     "Failed to create HTTP server at %s:%d: %s",
-                    _source[0],
-                    _source[1],
+                    *self._listen_ip_port,
                     err,
                 )
                 raise err
-
-            # Get listening port.
-            socks = self._server.sockets
-            assert socks and len(socks) == 1
-            sock = socks[0]
-            _source = sock.getsockname()
-            LOGGER.debug("Started Notify Server on %s", _source)
-            self._source_ip, self._source_port = _source
 
             await self._start_resubscriber()
 

@@ -25,6 +25,8 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import instance_id
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+from custom_components.magentatv import async_get_notification_server
+
 
 from .api import PairingClient
 from .const import CONF_USER_ID, DATA_NOTIFICATION_SERVER, DATA_USER_ID, DOMAIN, LOGGER
@@ -296,7 +298,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _async_task_pair(self):
         try:
-            _notify_server = self.hass.data[DOMAIN][DATA_NOTIFICATION_SERVER]
+            _notify_server = await async_get_notification_server(hass=self.hass)
             client = PairingClient(
                 host=self.host,
                 port=self.port,

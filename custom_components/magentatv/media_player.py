@@ -22,6 +22,7 @@ from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers import instance_id
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from custom_components.magentatv import async_get_notification_server
 
 from custom_components.magentatv.api.api_notify_server import NotifyServer
 
@@ -56,7 +57,7 @@ async def async_setup_entry(
         port=_port,
         user_id=config_entry.data.get(CONF_USER_ID),
         instance_id=(await instance_id.async_get(hass)),
-        notify_server=hass.data[DOMAIN][DATA_NOTIFICATION_SERVER],
+        notify_server=await async_get_notification_server(hass=hass),
     )
 
     async def async_close_connection(event: Event) -> None:
