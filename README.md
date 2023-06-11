@@ -83,18 +83,28 @@ You can control the used port and address used by the integration to receive eve
 In most cases these are not required.
 ```yaml
 magentatv:
+magentatv:
+  ## Address to listen for UPNP subscription callbacks, must be reachable from the media receivers.
+  ## Default 0.0.0.0
+  # listen_address: "0.0.0.0"
+
   ## Port for UPNP subscription callbacks, must be reachable from the media receivers.
   ## For Homeassistant running in docker, this needs to be mapped.
   ## Default: 11223
-  # port: 11223
+  # listen_port:
 
-  ## Address to listen for UPNP subscription callbacks, must be reachable from the media receivers.
-  ## Default 0.0.0.0
-  # address: "0.0.0.0"
+
+  ## Address to advertise to receiver for callback. This is auto detected by default and only needs to be overwritten in case of nat/docker setups.
+  ## This can NOT be a dns name
+  # advertise_address:
+
+  ## Port to advertise to receiver for callback. This equals the listen_port by default and only needs to be overwritten in case of port mapping
+  # advertise_port:
+
 
   ## Telekom user id used as default for configuration flows. Optional.
   ## Default None
-  # user_id: 1234567890123456789012
+  # user_id: 120049010000000017944901
 ```
 
 
