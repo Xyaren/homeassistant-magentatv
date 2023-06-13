@@ -19,8 +19,8 @@ magentatv:
 
   ## Port for UPNP subscription callbacks, must be reachable from the media receivers.
   ## For Homeassistant running in docker, this needs to be mapped.
-  ## Default: 11224
-  listen_port: 11225
+  ## Default: 11223
+  listen_port: 11226
 
 
   ## Address to advertise to receiver for callback. This is auto detected by default and only needs to be overwritten in case of nat/docker setups
@@ -33,4 +33,4 @@ magentatv:
 
   ## Telekom user id used as default for configuration flows. Optional.
   ## Default None
-  #user_id: 120049010000000017944901
+  #user_id: 123456789012345678901234

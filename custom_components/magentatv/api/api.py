@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+from urllib.parse import urlencode
 import xml.etree.ElementTree as ET
 from collections.abc import Mapping
 
 from async_upnp_client.aiohttp import AiohttpRequester
 
-from .const import LOGGER
+from .const import KEY_CODES, LOGGER
 
 from .api_notify_server import NotifyServer
 
@@ -91,6 +92,7 @@ class PairingClient:
                         _async_on_pair_event,
                     )
                 )
+
                 LOGGER.debug(
                     "Event Registration ID of %s: %s",
                     self._host,
@@ -178,3 +180,61 @@ class PairingClient:
             },
             body=full_body,
         )
+
+    async def async_send_action(self):
+        # TODO - make it work
+
+        params = {
+            "type": "EVENT_REMOTE_CONTROL",
+            "action": "functionCall",
+            "functionType": "startPlay",
+            "mediaCode": "7216",  # ?
+            "mediaType": "1",  # ?
+            "userID": self._user_id,
+            "ContentID": "0",  # ?
+            "playByBookmark": "0",
+            "playByTime": "0",
+        }
+
+        response = await self._async_send_upnp_soap(
+            "AVTransport",
+            "SetAVTransportURI",
+            {
+                "InstanceID": "0",
+                "CurrentURI": f"http://iptv?{urlencode(params)}&pairingInfo={self._terminal_id}:{self._verification_code}&platform=IPTV",
+                "CurrentURIMetaData": "",
+            },
+        )
+        LOGGER.debug("%s: %s", "Set URI", response[2])
+
+        response = await self._async_send_upnp_soap(
+            "AVTransport",
+            "Play",
+            {"InstanceID": "0", "Speed": "1"},
+        )
+        LOGGER.debug("%s: %s", "Play", response[2])
+
+    async def async_send_key(self, key: str):
+        assert self._verification_code is not None
+        response = await self._async_send_upnp_soap(
+            "X-CTC_RemoteControl",
+            "X_CTC_RemoteKey",
+            {
+                "InstanceID": "0",
+                "KeyCode": f"keyCode={KEY_CODES[key]}^{self._terminal_id}:{self._verification_code}^userID:{self._user_id}",
+            },
+        )
+        LOGGER.info("%s - %s: %s", "RemoteKey", key, response)
+
+    async def async_send_character_input(self, character_input: str):
+        assert self._verification_code is not None
+        response = await self._async_send_upnp_soap(
+            "X-CTC_RemoteControl",
+            "X_CTC_RemoteKey",
+            {
+                "InstanceID": "0",
+                "KeyCode": f"characterInput={character_input}^{self._terminal_id}:{self._verification_code}^userID:{self._user_id}",
+            },
+        )
+        LOGGER.info("%s - '%s': %s", "Send Character", character_input, response[2])
+        assert response[0] == 200

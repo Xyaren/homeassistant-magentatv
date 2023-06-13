@@ -29,7 +29,7 @@ from custom_components.magentatv import async_get_notification_server
 
 
 from .api import PairingClient
-from .const import CONF_USER_ID, DATA_NOTIFICATION_SERVER, DATA_USER_ID, DOMAIN, LOGGER
+from .const import CONF_USER_ID, DATA_USER_ID, DOMAIN, LOGGER
 
 FlowInput = Mapping[str, Any] | None
 ST = "urn:schemas-upnp-org:device:MediaRenderer:1"

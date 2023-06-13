@@ -5,8 +5,6 @@ https://github.com/xyaren/magentatv
 """
 from __future__ import annotations
 from asyncio import Lock
-from math import e
-
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol

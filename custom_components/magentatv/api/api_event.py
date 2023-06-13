@@ -28,6 +28,8 @@ class PlayContentEvent(EventModel):
     media_code: str | None = Field(alias="mediaCode")
     duration: int | None
     play_position: int | None = Field(alias="playPostion")  # not a typo !
+    fast_speed: int | None = Field(alias="fastSpeed")
+    chan_key: int | None = Field(alias="chanKey")
 
 
 class ShortEvent(EventModel):

@@ -253,19 +253,18 @@ class NotifyServer:
         self, request: aiohttp.web.BaseRequest
     ) -> aiohttp.web.Response:
         """Handle incoming requests."""
-        LOGGER.debug("Received request: %s", request)
-
         headers = request.headers
         body = await request.text()
+
+        if request.method != "NOTIFY":
+            LOGGER.debug("Not notify")
+            return aiohttp.web.Response(status=405)
+
         LOGGER.debug(
             "Incoming request:\nNOTIFY\n%s\n\n%s",
             "\n".join([key + ": " + value for key, value in headers.items()]),
             body,
         )
-
-        if request.method != "NOTIFY":
-            LOGGER.debug("Not notify")
-            return aiohttp.web.Response(status=405)
 
         status = await self._handle_notify(headers, body)
         LOGGER.debug("NOTIFY response status: %s", status)
