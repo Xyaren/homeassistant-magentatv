@@ -7,7 +7,9 @@ def test_play_content_event_event_deserializes():
     data = '{"new_play_mode":0,"playBackState":1,"mediaType":1,"mediaCode":"3665"}'
     obj = PlayContentEvent(**json.loads(data))
     assert obj.dict() == {
+        "chan_key": None,
         "duration": None,
+        "fast_speed": None,
         "media_code": "3665",
         "media_type": 1,
         "new_play_mode": 0,
