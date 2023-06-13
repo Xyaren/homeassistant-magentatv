@@ -12,6 +12,9 @@ jobs:
   Test:
     name: "Pytest"
     runs-on: "ubuntu-latest"
+    permissions:
+      issues: write
+      pull-requests: write
     steps:
         - name: "Checkout the repository"
           uses: "actions/checkout@v3.5.2"
