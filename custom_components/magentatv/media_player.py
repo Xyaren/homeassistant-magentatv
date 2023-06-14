@@ -1,8 +1,9 @@
 """Support for Denon AVR receivers using their HTTP interface."""
 from __future__ import annotations
 
-import json
 from datetime import timedelta
+import json
+from typing import List, Mapping, Self
 
 from homeassistant.components.media_player import (
     MediaPlayerEntity,
@@ -25,9 +26,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from custom_components.magentatv import async_get_notification_server
 
-from custom_components.magentatv.api.api_notify_server import NotifyServer
-
-from .api import EitChangedEvent, PairingClient, PlayContentEvent
+from .api import PairingClient, NotifyServer, MediaReceiverStateMachine, State
 from .const import CONF_USER_ID, DOMAIN, LOGGER
 
 SUPPORTED_FEATURES = (
@@ -43,6 +42,14 @@ SUPPORTED_FEATURES = (
 
 SCAN_INTERVAL = timedelta(seconds=10)  # only backup in case events have been missed
 PARALLEL_UPDATES = 0
+
+STATE_MAP: Mapping[State, MediaPlayerState] = {
+    None: None,
+    State.OFF: MediaPlayerState.OFF,
+    State.PLAYING: MediaPlayerState.PLAYING,
+    State.PAUSED: MediaPlayerState.PAUSED,
+    State.BUFFERING: MediaPlayerState.BUFFERING,
+}
 
 
 async def async_setup_entry(
@@ -84,8 +91,7 @@ async def async_setup_entry(
 class MediaReceiver(MediaPlayerEntity):
     """Representation of a Denon Media Player Device."""
 
-    _last_event_eit_changed: EitChangedEvent | None
-    _last_event_play_content: PlayContentEvent | None
+    _last_events: List[dict] = []
 
     _client: PairingClient
     _notify_server: NotifyServer
@@ -116,21 +122,21 @@ class MediaReceiver(MediaPlayerEntity):
         self._attr_icon = "mdi:audio-video"
         assert config_entry.unique_id
 
-        self._last_event_eit_changed = {}
-        self._last_event_play_content = {}
+        self._state_machine = MediaReceiverStateMachine()
 
     async def _async_on_event(self, changes):
         LOGGER.info("%s: Event %s", self.entity_id, changes)
 
         if "STB_playContent" in changes:
-            self._last_event_play_content = PlayContentEvent(
-                **json.loads(changes["STB_playContent"])
+            self._state_machine.on_event_play_content(
+                json.loads(changes["STB_playContent"])
             )
-
-        if "STB_EitChanged" in changes:
-            self._last_event_eit_changed = EitChangedEvent(
-                **json.loads(changes["STB_EitChanged"])
+        elif "STB_EitChanged" in changes:
+            self._state_machine.on_event_eit_changed(
+                json.loads(changes["STB_EitChanged"])
             )
+        else:
+            raise NotImplementedError()
 
         self.async_write_ha_state()
 
@@ -155,72 +161,40 @@ class MediaReceiver(MediaPlayerEntity):
     async def async_update(self) -> None:
         data = await self._client.async_get_player_state()
         LOGGER.debug("%s: New Data Polled: %s", self.entity_id, data)
-        self._last_event_play_content = PlayContentEvent(**data)
+        self._state_machine.on_poll_player_state(data)
 
     @property
     def state(self) -> MediaPlayerState | None:
-        """Return the state of the device."""
-        try:
-            lepc = self._last_event_play_content
-
-            new_play_mode = lepc.new_play_mode
-            if new_play_mode is not None:
-                if new_play_mode == 0:
-                    self._last_event_eit_changed = None
-                    # return MediaPlayerState.OFF
-                    return MediaPlayerState.IDLE
-                elif new_play_mode == 1:
-                    return MediaPlayerState.PAUSED
-                elif new_play_mode in [2, 3, 4, 5]:
-                    return MediaPlayerState.PLAYING
-                elif new_play_mode == 20:
-                    return MediaPlayerState.BUFFERING
-                return MediaPlayerState.IDLE
-
-            lepc_dict = lepc.dict()
-            if (
-                "media_type" in lepc_dict
-                and "media_code" in lepc_dict
-                and "chan_key" in lepc_dict
-            ):
-                if lepc.play_back_state == 1:
-                    if "fast_speed" in lepc_dict:
-                        if lepc.fast_speed == 0:
-                            return MediaPlayerState.PAUSED
-                        elif lepc.fast_speed == 1:
-                            return MediaPlayerState.PLAYING
-                    return MediaPlayerState.PLAYING
-                else:
-                    raise NotImplementedError("")
-
-            if lepc.play_back_state == 1:
-                return MediaPlayerState.OFF
-            elif lepc.play_back_state == 0:
-                return MediaPlayerState.OFF  # deep sleep ?
-
-        except (NameError, AttributeError):
-            return None
-        return None
+        """Return the state of the device."""  #
+        return STATE_MAP[self._state_machine.state]
 
     @property
     def media_title(self):
         """Title of current playing media."""
-        try:
-            _playing_event = self._last_event_eit_changed.program_info[0].short_event[0]
+        if self._state_machine.program_current is not None:
+            _playing_event = self._state_machine.program_current.short_event[0]
             _parts = [
                 _playing_event.event_name,
                 _playing_event.text_char,
             ]
             return " - ".join([x for x in _parts if x is not None and x != ""])
-        except (NameError, AttributeError):
-            return None
+        return None
+
+    # @property
+    # def extra_state_attributes(self):
+    #     """Return entity specific state attributes."""
+    #     return {
+    #         "program_current": self._state_machine.program_current.dict()
+    #         if self._state_machine.program_current is not None
+    #         else None,
+    #         "program_next": self._state_machine.program_next.dict()
+    #         if self._state_machine.program_next is not None
+    #         else None,
+    #     }
 
     @property
     def media_channel(self) -> str | None:
-        try:
-            return self._last_event_eit_changed.channel_num
-        except (NameError, AttributeError):
-            return None
+        return self._state_machine.chanKey
 
     @property
     def supported_features(self) -> MediaPlayerEntityFeature:
@@ -249,24 +223,18 @@ class MediaReceiver(MediaPlayerEntity):
 
     @property
     def media_duration(self) -> int | None:
-        try:
-            return self._last_event_play_content.duration or None
-        except (NameError, AttributeError):
-            return None
+        return self._state_machine.duration
 
     @property
     def media_position(self) -> int | None:
-        try:
-            if (self._last_event_play_content.duration or 0) > 0:
-                return self._last_event_play_content.play_position
-        except (NameError, AttributeError):
-            return None
+        return self._state_machine.position
 
     @property
     def media_content_type(self) -> MediaType | str | None:
         """Content type of current playing media."""
-        if self._last_event_play_content.media_type == 1:
-            return MediaType.CHANNEL
+        # TODO
+        # if self._last_event_play_content.media_type == 1:
+        #    return MediaType.CHANNEL
         return None
 
     async def async_turn_on(self) -> None:
@@ -276,18 +244,6 @@ class MediaReceiver(MediaPlayerEntity):
     async def async_turn_off(self) -> None:
         """Turn the media player off."""
         await self._client.async_send_key("OFF")
-
-    async def async_toggle(self) -> None:
-        """Toggle the power on the media player."""
-
-        if self.state in {
-            MediaPlayerState.OFF,
-            # MediaPlayerState.IDLE, # idle == on
-            MediaPlayerState.STANDBY,
-        }:
-            await self.async_turn_on()
-        else:
-            await self.async_turn_off()
 
     async def async_mute_volume(self, mute: bool) -> None:
         """Mute the volume."""
