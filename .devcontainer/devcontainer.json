@@ -24,7 +24,8 @@
         "ms-python.isort",
         "ms-python.black-formatter",
         "ms-python.pylint",
-        "github.vscode-github-actions"
+        "github.vscode-github-actions",
+        "redhat.vscode-yaml"
       ],
       "settings": {
         "files.eol": "\n",
@@ -38,7 +39,11 @@
         "editor.formatOnPaste": false,
         "editor.formatOnSave": true,
         "editor.formatOnType": true,
-        "files.trimTrailingWhitespace": true
+        "files.trimTrailingWhitespace": true,
+        "[yaml]": {
+          "editor.insertSpaces": true,
+          "editor.tabSize": 2
+        }
       }
     }
   },

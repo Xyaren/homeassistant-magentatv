@@ -3,15 +3,14 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-from urllib.parse import urlencode
 import xml.etree.ElementTree as ET
 from collections.abc import Mapping
+from urllib.parse import urlencode
 
 from async_upnp_client.aiohttp import AiohttpRequester
 
-from .const import KEY_CODES, LOGGER
-
 from .api_notify_server import NotifyServer
+from .const import KEY_CODES, LOGGER
 
 
 class PairingClient:

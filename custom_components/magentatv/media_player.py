@@ -1,9 +1,9 @@
 """Support for Denon AVR receivers using their HTTP interface."""
 from __future__ import annotations
 
-from datetime import timedelta
 import json
-from typing import List, Mapping, Self
+from collections.abc import Mapping
+from datetime import timedelta
 
 from homeassistant.components.media_player import (
     MediaPlayerEntity,
@@ -24,9 +24,10 @@ from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers import instance_id
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
 from custom_components.magentatv import async_get_notification_server
 
-from .api import PairingClient, NotifyServer, MediaReceiverStateMachine, State
+from .api import MediaReceiverStateMachine, NotifyServer, PairingClient, State
 from .const import CONF_USER_ID, DOMAIN, LOGGER
 
 SUPPORTED_FEATURES = (
@@ -91,7 +92,7 @@ async def async_setup_entry(
 class MediaReceiver(MediaPlayerEntity):
     """Representation of a Denon Media Player Device."""
 
-    _last_events: List[dict] = []
+    _last_events: list[dict] = []
 
     _client: PairingClient
     _notify_server: NotifyServer

@@ -27,7 +27,6 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from custom_components.magentatv import async_get_notification_server
 
-
 from .api import PairingClient
 from .const import CONF_USER_ID, DATA_USER_ID, DOMAIN, LOGGER
 

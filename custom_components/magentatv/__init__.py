@@ -4,15 +4,13 @@ For more details about this integration, please refer to
 https://github.com/xyaren/magentatv
 """
 from __future__ import annotations
+
 from asyncio import Lock
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    EVENT_HOMEASSISTANT_STOP,
-    Platform,
-)
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 
@@ -27,8 +25,8 @@ from .const import (
     DATA_ADVERTISE_ADDRESS,
     DATA_ADVERTISE_PORT,
     DATA_LISTEN_ADDRESS,
-    DATA_NOTIFICATION_SERVER,
     DATA_LISTEN_PORT,
+    DATA_NOTIFICATION_SERVER,
     DATA_USER_ID,
     DOMAIN,
     LOGGER,
