@@ -118,7 +118,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = vol.Schema(
             {vol.Optional(CONF_HOST): vol.In(self._discoveries.keys())}
         )
-        # TODO: Finish form (title,labels etc)
+
         return self.async_show_form(
             step_id="user", data_schema=data_schema, last_step=False
         )
@@ -196,7 +196,6 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             }
         )
 
-        # TODO: Finish form (title,labels etc)
         return self.async_show_form(
             step_id="manual", data_schema=data_schema, errors=errors, last_step=False
         )
@@ -395,7 +394,6 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         if prefilled_user_id is not None:
             prefilled_user_id = str(prefilled_user_id)
 
-        # TODO: Finish form (title,labels etc)
         return self.async_show_form(
             step_id="enter_user_id",
             data_schema=vol.Schema(

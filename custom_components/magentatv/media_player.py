@@ -30,7 +30,7 @@ from homeassistant.helpers import entity_platform
 from custom_components.magentatv import async_get_notification_server
 
 from .api import MediaReceiverStateMachine, NotifyServer, PairingClient, State, KeyCode
-from .const import CONF_USER_ID, DOMAIN, LOGGER, SERVICE_SEND_KEY,key_code
+from .const import CONF_USER_ID, DOMAIN, LOGGER, SERVICE_SEND_KEY, key_code
 import voluptuous as vol
 
 
@@ -98,7 +98,7 @@ async def async_setup_entry(
     platform.async_register_entity_service(
         SERVICE_SEND_KEY,
         {
-            vol.Required('key_code'): key_code,
+            vol.Required("key_code"): key_code,
         },
         "send_key",
     )
@@ -286,5 +286,5 @@ class MediaReceiver(MediaPlayerEntity):
         if self.state not in [MediaPlayerState.PLAYING, MediaPlayerState.BUFFERING]:
             await self._client.async_send_key(KeyCode.PLAY)
 
-    async def send_key(self,key_code: KeyCode) -> None:
+    async def send_key(self, key_code: KeyCode) -> None:
         await self._client.async_send_key(key_code)
