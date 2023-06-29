@@ -29,12 +29,13 @@ Feel free to contribute!
 - Autodiscovery of media receivers within the local network
 - See current (TV) playing status
 - Manual setup of a media receiver via host/ip and port
+- Send button Presses to the receiver (remote control via Homeassistant service)
+  Check out the service `magentatv.send_key`
+- Configurable listen/advertised address and port used for receiving events (for runing in Docker or NAT situations)
+- MediaPlayer controls like play/pause/mute/volume/on/off
 
 ### Planned
-- Configurable Port Range (For HA in Docker)
-- Send Button Presses to the receiver (Remote Control via Homeassistant Service)
-- Add MediaPlayer Controls like play/pause/mute etc
-- Support more models
+- Support more device models
 - Detect if App (Youtube/Prime/Netflix() is currently active on the receiver
 - (Unknwon if possible) Start apps like Youtube/Netflix from Homeassistant
 
@@ -63,6 +64,8 @@ or
 ## Docker considerations
 In order to receive events from the mediareceivers, the integration needs to create a server listening on port 11223.
 Make sure this port is reachable from the receivers. In case of homeassistant running in docker ( except running in `host` mode), this requires mapping port 11223 to the outside.
+
+Check out the Configuration section below for configuration related to setting a the correct advertisement address and port in docker scenarios
 
 ## Adding a Receiver
 

@@ -6,11 +6,10 @@ logger:
   default: info
   logs:
     custom_components.magentatv: debug
-    async_upnp_client.traffic.upnp: debug
+    #async_upnp_client.traffic.upnp: debug
 #    async_upnp_client: debug
 debugpy:
 #ssdp:
-
 
 magentatv:
   ## Address to listen for UPNP subscription callbacks, must be reachable from the media receivers.
@@ -22,14 +21,12 @@ magentatv:
   ## Default: 11223
   listen_port: 11226
 
-
   ## Address to advertise to receiver for callback. This is auto detected by default and only needs to be overwritten in case of nat/docker setups
   ## This can NOT be a dns name
   advertise_address: 192.168.2.4
 
   ## Port to advertise to receiver for callback. This equals the listen_port by default and only needs to be overwritten in case of port mapping
   #advertise_port: 11225
-
 
   ## Telekom user id used as default for configuration flows. Optional.
   ## Default None

@@ -10,6 +10,7 @@ from homeassistant.components.media_player import (
     MediaPlayerEntityFeature,
     MediaPlayerState,
     MediaType,
+    MediaPlayerDeviceClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -24,11 +25,14 @@ from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers import instance_id
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers import entity_platform
 
 from custom_components.magentatv import async_get_notification_server
 
-from .api import MediaReceiverStateMachine, NotifyServer, PairingClient, State
-from .const import CONF_USER_ID, DOMAIN, LOGGER
+from .api import MediaReceiverStateMachine, NotifyServer, PairingClient, State, KeyCode
+from .const import CONF_USER_ID, DOMAIN, LOGGER, SERVICE_SEND_KEY,key_code
+import voluptuous as vol
+
 
 SUPPORTED_FEATURES = (
     0
@@ -88,6 +92,17 @@ async def async_setup_entry(
     )
     async_add_entities(entities, update_before_add=False)
 
+    platform = entity_platform.async_get_current_platform()
+
+    # This will call Entity.set_sleep_timer(sleep_time=VALUE)
+    platform.async_register_entity_service(
+        SERVICE_SEND_KEY,
+        {
+            vol.Required('key_code'): key_code,
+        },
+        "send_key",
+    )
+
 
 class MediaReceiver(MediaPlayerEntity):
     """Representation of a Denon Media Player Device."""
@@ -120,14 +135,14 @@ class MediaReceiver(MediaPlayerEntity):
             configuration_url=config_entry.data.get(CONF_URL),
             manufacturer=config_entry.data.get("manufacturer"),
         )
-        self._attr_icon = "mdi:audio-video"
+        # self._attr_icon = "mdi:audio-video"
+        self._attr_device_class = MediaPlayerDeviceClass.RECEIVER
         assert config_entry.unique_id
 
         self._state_machine = MediaReceiverStateMachine()
 
     async def _async_on_event(self, changes):
-        LOGGER.info("%s: Event %s", self.entity_id, changes)
-
+        LOGGER.debug("%s: Event %s", self.entity_id, changes)
         if "STB_playContent" in changes:
             self._state_machine.on_event_play_content(
                 json.loads(changes["STB_playContent"])
@@ -161,7 +176,6 @@ class MediaReceiver(MediaPlayerEntity):
 
     async def async_update(self) -> None:
         data = await self._client.async_get_player_state()
-        LOGGER.debug("%s: New Data Polled: %s", self.entity_id, data)
         self._state_machine.on_poll_player_state(data)
 
     @property
@@ -236,38 +250,41 @@ class MediaReceiver(MediaPlayerEntity):
         # TODO
         # if self._last_event_play_content.media_type == 1:
         #    return MediaType.CHANNEL
-        return None
+        return MediaType.CHANNEL
 
     async def async_turn_on(self) -> None:
         """Turn the media player on."""
-        await self._client.async_send_key("ON")
+        await self._client.async_send_key(KeyCode.ON)
 
     async def async_turn_off(self) -> None:
         """Turn the media player off."""
-        await self._client.async_send_key("OFF")
+        await self._client.async_send_key(KeyCode.OFF)
 
     async def async_mute_volume(self, mute: bool) -> None:
         """Mute the volume."""
 
         # reset mute: colume keys always unmute
-        await self._client.async_send_key("VOL_DOWN")
-        await self._client.async_send_key("VOL_UP")
+        await self._client.async_send_key(KeyCode.VOL_DOWN)
+        await self._client.async_send_key(KeyCode.VOL_UP)
 
         # player is now unmuted, now set the desired state
 
         if mute:
-            await self._client.async_send_key("MUTE")
+            await self._client.async_send_key(KeyCode.MUTE)
 
     async def async_volume_up(self) -> None:
-        await self._client.async_send_key("VOL_UP")
+        await self._client.async_send_key(KeyCode.VOL_UP)
 
     async def async_volume_down(self) -> None:
-        await self._client.async_send_key("VOL_DOWN")
+        await self._client.async_send_key(KeyCode.VOL_DOWN)
 
     async def async_media_pause(self) -> None:
         if self.state == MediaPlayerState.PLAYING:
-            await self._client.async_send_key("PAUSE")
+            await self._client.async_send_key(KeyCode.PAUSE)
 
     async def async_media_play(self) -> None:
         if self.state not in [MediaPlayerState.PLAYING, MediaPlayerState.BUFFERING]:
-            await self._client.async_send_key("PLAY")
+            await self._client.async_send_key(KeyCode.PLAY)
+
+    async def send_key(self,key_code: KeyCode) -> None:
+        await self._client.async_send_key(key_code)

@@ -1,0 +1,126 @@
+%YAML 1.1
+---
+# Example services.yaml entry
+
+# Service ID
+send_key:
+  # Service name as shown in UI
+  name: Send Key
+  # Description of the service
+  description: Send a key to the receiver
+  # If the service accepts entity IDs, target allows the user to specify entities by
+  # entity, device, or area. If `target` is specified, `entity_id` should not be
+  # defined in the `fields` map. By default it shows only targets matching entities
+  # from the same domain as the service, but if further customization is required,
+  # target supports the entity, device, and area selectors
+  # (https://www.home-assistant.io/docs/blueprint/selectors/). Entity selector
+  # parameters will automatically be applied to device and area, and device selector
+  # parameters will automatically be applied to area.
+  target:
+    entity:
+      integration: magentatv
+  # Different fields that your service accepts
+  fields:
+    # Key of the field
+    key_code:
+      # Field name as shown in UI
+      name: Key Code
+      # Description of the field
+      description: Key sent to the receiver
+      # Whether or not field is required (default = false)
+      required: true
+      # Advanced fields are only shown when the advanced mode is enabled for the user
+      # (default = false)
+      advanced: false
+      # Example value that can be passed for this field
+      example: PAUSE
+      # The default field value
+      default: PAUSE
+      selector:
+        select:
+          options:
+            - BACK
+            - ENTER
+            - SPACE
+            - PGUP
+            - PGDOWN
+            - LEFT
+            - UP
+            - RIGHT
+            - DOWN
+            - DELETE
+            - NUM0
+            - NUM1
+            - NUM2
+            - NUM3
+            - NUM4
+            - NUM5
+            - NUM6
+            - NUM7
+            - NUM8
+            - NUM9
+            - POUND
+            - STAR
+            - F1
+            - F2
+            - F3
+            - F4
+            - F5
+            - F6
+            - F7
+            - F8
+            - F9
+            - F10
+            - F11
+            - F12
+            - F13
+            - F14
+            - F15
+            - F16
+            - IPTV
+            - PC
+            - SOURCE
+            - PIP
+            - POWER
+            - CHANNEL_UP
+            - CHANNEL_DOWN
+            - VOL_UP
+            - VOL_DOWN
+            - MUTE
+            - TRACK
+            - NEXTCH
+            - FAST_FORWARD
+            - FAST_REWIND
+            - END
+            - BEGIN
+            - INFO
+            - INTER
+            - STOP
+            - PORTAL
+            - EPG
+            - RED
+            - GREEN
+            - YELLOW
+            - BLUE
+            - SWITCH
+            - FAV
+            - HELP
+            - SETTINGS
+            - SUBTITLE
+            - SEARCH
+            - TVMENU
+            - VODMENU
+            - TVODMENU
+            - NVODMENU
+            - REPLAY
+            - SKIP
+            - EXIT
+            - LASTCH
+            - RECORDINGS
+            - OPTION
+            - PVR
+            - RADIO
+            - 'ON'
+            - 'OFF'
+            - DVB_TXT
+            - MULTIVIEW

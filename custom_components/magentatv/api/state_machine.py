@@ -1,6 +1,9 @@
 from enum import Enum
+from logging import Logger, getLogger
 
 from .api_event import ProgramInfo
+
+LOGGER: Logger = getLogger(__package__ + ".state_machine")
 
 
 class State(str, Enum):
@@ -28,12 +31,14 @@ class MediaReceiverStateMachine:
     _ignore_next_poll_event = False
 
     def on_event_eit_changed(self, data: dict) -> None:
-        if self._last_event_play_content == data:
+        LOGGER.debug("On Event EitChanged: %s", data)
+        if self._last_event_eit_changed == data:
+            LOGGER.debug("Event EitChanged is identical to last event. Ignoring")
             return
 
         self._on_event_eit_changed_changed(data)
 
-        self._last_event_play_content = data
+        self._last_event_eit_changed = data
 
     def _on_event_eit_changed_changed(self, data) -> None:
         if "channel_num" in data:
@@ -45,7 +50,10 @@ class MediaReceiverStateMachine:
             self.program_next = ProgramInfo(**programm_info[1])
 
     def on_event_play_content(self, data: dict) -> None:
+        LOGGER.debug("On Event PlayContent: %s", data)
+
         if self._last_event_play_content == data:
+            LOGGER.debug("Event PlayContent is identical to last event. Ignoring")
             return
 
         self._on_event_play_content_changed(data)
@@ -90,7 +98,9 @@ class MediaReceiverStateMachine:
                 return
 
     def on_poll_player_state(self, data: dict) -> None:
+        LOGGER.debug("On Poll PlayerState: %s", data)
         if self._last_poll_player_state == data:
+            LOGGER.debug("Poll PlayerState is identical to last poll. Ignoring")
             return
 
         self._on_poll_player_state_changed(data)

@@ -1,106 +1,107 @@
+from enum import Enum
 from logging import Logger, getLogger
 
 LOGGER: Logger = getLogger(__package__)
 
-KEY_CODES = {
-    "BACK": "0x0008",
-    "ENTER": "0x000D",
-    "OK": "0x000D",
-    "SPACE": "0x0020",
-    "PGUP": "0x0021",
-    "PGDOWN": "0x0022",
-    "LEFT": "0x0025",
-    "UP": "0x0026",
-    "RIGHT": "0x0027",
-    "DOWN": "0x0028",
-    "DELETE": "0x002E",
-    "0": "0x0030",
-    "1": "0x0031",
-    "2": "0x0032",
-    "3": "0x0033",
-    "4": "0x0034",
-    "5": "0x0035",
-    "6": "0x0036",
-    "7": "0x0037",
-    "8": "0x0038",
-    "9": "0x0039",
-    "POUND": "0x0069",
-    "STAR": "0x006A",
-    "F1": "0x0070",
-    "F2": "0x0071",
-    "F3": "0x0072",
-    "F4": "0x0073",
-    "F5": "0x0074",
-    "F6": "0x0075",
-    "F7": "0x0076",
-    "F8": "0x0077",
-    "F9": "0x0078",
-    "F10": "0x0079",
-    "F11": "0x007A",
-    "F12": "0x007B",
-    "F13": "0x007C",
-    "F14": "0x007D",
-    "F15": "0x007E",
-    "F16": "0x007F",
-    "IPTV": "0x0081",
-    "PC": "0x0082",
-    "SOURCE": "0x0083",
-    "PIP": "0x0084",
-    "POWER": "0x0100",
-    "CHANNEL_UP": "0x0101",
-    "CH_UP": "0x0101",
-    "CHANNEL_DOWN": "0x0102",
-    "CH_DOWN": "0x0102",
-    "VOL_UP": "0x0103",
-    "VOL_DOWN": "0x0104",
-    "MUTE": "0x0105",
-    "TRACK": "0x0106",
-    "NEXTCH": "0x0107",
-    "PAUSE": "0x0107",
-    "PAUSE_PLAY": "0x0107",
-    "PLAY": "0x0107",
-    "FAST_FORWARD": "0x0108",
-    "FORWARD": "0x0108",
-    "FAST_REWIND": "0x0109",
-    "REWIND": "0x0109",
-    "END": "0x010A",
-    "SKIP_BACK": "0x010A",
-    "BEGIN": "0x010B",
-    "PREVCH": "0x010B",
-    "INFO": "0x010C",
-    "INTER": "0x010D",
-    "STOP": "0x010E",
-    "PORTAL": "0x0110",
-    "EPG": "0x0111",
-    "PROGRAM_GUIDE": "0x0111",
-    "RED": "0x0113",
-    "GREEN": "0x0114",
-    "YELLOW": "0x0115",
-    "BLUE": "0x0116",
-    "SWITCH": "0x0118",
-    "FAV": "0x0119",
-    "HELP": "0x011C",
-    "SETTINGS": "0x011D",
-    "SUBTITLE": "0x0236",
-    "SEARCH": "0x0451",
-    "TVMENU": "0x0454",
-    "VODMENU": "0x0455",
-    "TVODMENU": "0x0456",
-    "NVODMENU": "0x0458",
-    "REPLAY": "0x045B",
-    "SKIP": "0x045C",
-    "EXIT": "0x045D",
-    "LASTCH": "0x045E",
-    "RECORDINGS": "0x045F",
-    "OPTION": "0x0460",
-    "OPTIONS": "0x0460",
-    "PVR": "0x0461",
-    "RECORD": "0x0461",
-    "REC_ACTIVE": "0x0461",
-    "RADIO": "0x0462",
-    "ON": "0x0480",
-    "OFF": "0x0481",
-    "DVB_TXT": "0x0560",
-    "TTEXT": "0x0560",
-    "MULTIVIEW": "0x0562",
-}
+
+class KeyCode(Enum):
+    BACK = "0x0008"
+    ENTER = "0x000D"
+    OK = "0x000D"
+    SPACE = "0x0020"
+    PGUP = "0x0021"
+    PGDOWN = "0x0022"
+    LEFT = "0x0025"
+    UP = "0x0026"
+    RIGHT = "0x0027"
+    DOWN = "0x0028"
+    DELETE = "0x002E"
+    NUM0 = "0x0030"
+    NUM1 = "0x0031"
+    NUM2 = "0x0032"
+    NUM3 = "0x0033"
+    NUM4 = "0x0034"
+    NUM5 = "0x0035"
+    NUM6 = "0x0036"
+    NUM7 = "0x0037"
+    NUM8 = "0x0038"
+    NUM9 = "0x0039"
+    POUND = "0x0069"
+    STAR = "0x006A"
+    F1 = "0x0070"
+    F2 = "0x0071"
+    F3 = "0x0072"
+    F4 = "0x0073"
+    F5 = "0x0074"
+    F6 = "0x0075"
+    F7 = "0x0076"
+    F8 = "0x0077"
+    F9 = "0x0078"
+    F10 = "0x0079"
+    F11 = "0x007A"
+    F12 = "0x007B"
+    F13 = "0x007C"
+    F14 = "0x007D"
+    F15 = "0x007E"
+    F16 = "0x007F"
+    IPTV = "0x0081"
+    PC = "0x0082"
+    SOURCE = "0x0083"
+    PIP = "0x0084"
+    POWER = "0x0100"
+    CHANNEL_UP = "0x0101"
+    CH_UP = "0x0101"
+    CHANNEL_DOWN = "0x0102"
+    CH_DOWN = "0x0102"
+    VOL_UP = "0x0103"
+    VOL_DOWN = "0x0104"
+    MUTE = "0x0105"
+    TRACK = "0x0106"
+    NEXTCH = "0x0107"
+    PAUSE = "0x0107"
+    PAUSE_PLAY = "0x0107"
+    PLAY = "0x0107"
+    FAST_FORWARD = "0x0108"
+    FORWARD = "0x0108"
+    FAST_REWIND = "0x0109"
+    REWIND = "0x0109"
+    END = "0x010A"
+    SKIP_BACK = "0x010A"
+    BEGIN = "0x010B"
+    PREVCH = "0x010B"
+    INFO = "0x010C"
+    INTER = "0x010D"
+    STOP = "0x010E"
+    PORTAL = "0x0110"
+    EPG = "0x0111"
+    PROGRAM_GUIDE = "0x0111"
+    RED = "0x0113"
+    GREEN = "0x0114"
+    YELLOW = "0x0115"
+    BLUE = "0x0116"
+    SWITCH = "0x0118"
+    FAV = "0x0119"
+    HELP = "0x011C"
+    SETTINGS = "0x011D"
+    SUBTITLE = "0x0236"
+    SEARCH = "0x0451"
+    TVMENU = "0x0454"
+    VODMENU = "0x0455"
+    TVODMENU = "0x0456"
+    NVODMENU = "0x0458"
+    REPLAY = "0x045B"
+    SKIP = "0x045C"
+    EXIT = "0x045D"
+    LASTCH = "0x045E"
+    RECORDINGS = "0x045F"
+    OPTION = "0x0460"
+    OPTIONS = "0x0460"
+    PVR = "0x0461"
+    RECORD = "0x0461"
+    REC_ACTIVE = "0x0461"
+    RADIO = "0x0462"
+    ON = "0x0480"
+    OFF = "0x0481"
+    DVB_TXT = "0x0560"
+    TTEXT = "0x0560"
+    MULTIVIEW = "0x0562"

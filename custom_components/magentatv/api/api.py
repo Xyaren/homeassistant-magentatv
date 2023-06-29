@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 from async_upnp_client.aiohttp import AiohttpRequester
 
 from .api_notify_server import NotifyServer
-from .const import KEY_CODES, LOGGER
+from .const import LOGGER, KeyCode
 
 
 class PairingClient:
@@ -213,14 +213,14 @@ class PairingClient:
         )
         LOGGER.debug("%s: %s", "Play", response[2])
 
-    async def async_send_key(self, key: str):
+    async def async_send_key(self, key: KeyCode):
         assert self._verification_code is not None
         response = await self._async_send_upnp_soap(
             "X-CTC_RemoteControl",
             "X_CTC_RemoteKey",
             {
                 "InstanceID": "0",
-                "KeyCode": f"keyCode={KEY_CODES[key]}^{self._terminal_id}:{self._verification_code}^userID:{self._user_id}",
+                "KeyCode": f"keyCode={key.value}^{self._terminal_id}:{self._verification_code}^userID:{self._user_id}",
             },
         )
         LOGGER.info("%s - %s: %s", "RemoteKey", key, response)
