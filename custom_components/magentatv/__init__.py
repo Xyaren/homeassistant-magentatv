@@ -61,21 +61,23 @@ CONFIG_SCHEMA: vol.Schema = vol.Schema(
 async def async_setup(hass: HomeAssistant, entry: ConfigType):
     LOGGER.info("MagentaTV setup")
 
-    # Return boolean to indicate that initialization was successful.
     domain_data = hass.data.setdefault(DOMAIN, {})
-    config = entry[DOMAIN]
 
-    mapping = {
-        CONF_USER_ID: DATA_USER_ID,
-        CONF_LISTEN_ADDRESS: DATA_LISTEN_ADDRESS,
-        CONF_LISTEN_PORT: DATA_LISTEN_PORT,
-        CONF_ADVERTISE_ADDRESS: DATA_ADVERTISE_ADDRESS,
-        CONF_ADVERTISE_PORT: DATA_ADVERTISE_PORT,
-    }
-    for k, v in mapping.items():
-        if k in config:
-            domain_data.setdefault(v, config[k])
+    if DOMAIN in entry:
+        config = entry[DOMAIN]
 
+        mapping = {
+            CONF_USER_ID: DATA_USER_ID,
+            CONF_LISTEN_ADDRESS: DATA_LISTEN_ADDRESS,
+            CONF_LISTEN_PORT: DATA_LISTEN_PORT,
+            CONF_ADVERTISE_ADDRESS: DATA_ADVERTISE_ADDRESS,
+            CONF_ADVERTISE_PORT: DATA_ADVERTISE_PORT,
+        }
+        for k, v in mapping.items():
+            if k in config:
+                domain_data.setdefault(v, config[k])
+
+    # Return boolean to indicate that initialization was successful.
     return True
 
 
