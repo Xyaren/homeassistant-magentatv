@@ -101,9 +101,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 return await self.async_step_manual()
             # User has chosen a device, ask for confirmation
             discovery = self._discoveries[host]
-            await self._async_set_info_from_discovery(
-                discovery, abort_if_configured=True, raise_on_progress=False
-            )
+            await self._async_set_info_from_discovery(discovery, abort_if_configured=True, raise_on_progress=False)
             return await self.async_step_enter_user_id()
 
         if not (discoveries := await self._async_get_discoveries()):
@@ -116,13 +114,9 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             for discovery in discoveries
         }
 
-        data_schema = vol.Schema(
-            {vol.Optional(CONF_HOST): vol.In(self._discoveries.keys())}
-        )
+        data_schema = vol.Schema({vol.Optional(CONF_HOST): vol.In(self._discoveries.keys())})
 
-        return self.async_show_form(
-            step_id="user", data_schema=data_schema, last_step=False
-        )
+        return self.async_show_form(step_id="user", data_schema=data_schema, last_step=False)
 
     async def _async_get_discoveries(self) -> list[ssdp.SsdpServiceInfo]:
         """Get list of unconfigured DLNA devices discovered by SSDP."""
@@ -131,13 +125,8 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         discoveries = await ssdp.async_get_discovery_info_by_st(self.hass, ST)
 
         # Filter out devices already configured
-        current_unique_ids = {
-            entry.unique_id
-            for entry in self._async_current_entries(include_ignore=False)
-        }
-        discoveries = [
-            disc for disc in discoveries if disc.ssdp_udn not in current_unique_ids
-        ]
+        current_unique_ids = {entry.unique_id for entry in self._async_current_entries(include_ignore=False)}
+        discoveries = [disc for disc in discoveries if disc.ssdp_udn not in current_unique_ids]
 
         return discoveries
 
@@ -150,9 +139,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         description_cache = DescriptionCache(requester)
 
         url = "http://" + self.host + ":" + str(self.port) + "/xml/xctc.xml"
-        device_attributes = await description_cache.async_get_description_dict(
-            location=url
-        )
+        device_attributes = await description_cache.async_get_description_dict(location=url)
         self.descriptor_url = url
         self._set_from_upnp(device_attributes)
 
@@ -197,9 +184,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             }
         )
 
-        return self.async_show_form(
-            step_id="manual", data_schema=data_schema, errors=errors, last_step=False
-        )
+        return self.async_show_form(step_id="manual", data_schema=data_schema, errors=errors, last_step=False)
 
     async def async_step_unignore(self, user_input: Mapping[str, Any]) -> FlowResult:
         """Rediscover previously ignored devices by their unique_id."""
@@ -209,13 +194,9 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         await self.async_set_unique_id(self._udn)
 
         # Find a discovery matching the unignored unique_id for a DMR device
-        discovery = await ssdp.async_get_discovery_info_by_udn_st(
-            self.hass, udn=self._udn, st=ST
-        )
+        discovery = await ssdp.async_get_discovery_info_by_udn_st(self.hass, udn=self._udn, st=ST)
         if discovery:
-            await self._async_set_info_from_discovery(
-                discovery, abort_if_configured=True, raise_on_progress=False
-            )
+            await self._async_set_info_from_discovery(discovery, abort_if_configured=True, raise_on_progress=False)
             self.context["title_placeholders"] = {"name": self.friendly_name}
 
             return await self.async_step_enter_user_id()
@@ -268,7 +249,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_UNIQUE_ID: self._udn,
                     CONF_URL: self.descriptor_url,
                 },
-                reload_on_update=False,
+                reload_on_update=True,
             )
 
         return await self.async_step_enter_user_id()
@@ -323,9 +304,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             # To avoid a potential deadlock we create a new task that continues the flow.
             # The task must be completely done so the flow can await the task
             # if needed and get the task result.
-            self.hass.async_create_task(
-                self.hass.config_entries.flow.async_configure(flow_id=self.flow_id)
-            )
+            self.hass.async_create_task(self.hass.config_entries.flow.async_configure(flow_id=self.flow_id))
 
     async def async_step_finish(self, user_input=None):
         return self.async_create_entry(
@@ -365,9 +344,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             # verification code is present -> pairing done
             return self.async_show_progress_done(next_step_id="finish")
 
-    async def async_step_enter_user_id(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_enter_user_id(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Allow the user to enter his user id adding the device."""
 
         self._abort_if_unique_id_configured()

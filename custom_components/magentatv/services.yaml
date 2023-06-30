@@ -103,7 +103,7 @@ send_key:
             - DVB_TXT
             - MULTIVIEW
 send_text:
-  name: Send KeyText
+  name: Send Text
   description: Send Text to the receiver
   target:
     entity:
@@ -115,6 +115,6 @@ send_text:
       required: true
       advanced: false
       example: Awaken your home
-      default: PAUSE
+      default:
       selector:
         text:

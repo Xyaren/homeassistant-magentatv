@@ -30,8 +30,15 @@ class MediaReceiverStateMachine:
 
     _ignore_next_poll_event = False
 
+    _available: bool = False
+
+    def on_connection_error(self) -> None:
+        self._available = False
+
     def on_event_eit_changed(self, data: dict) -> None:
         LOGGER.debug("On Event EitChanged: %s", data)
+        self._available = True
+
         if self._last_event_eit_changed == data:
             LOGGER.debug("Event EitChanged is identical to last event. Ignoring")
             return
@@ -51,6 +58,7 @@ class MediaReceiverStateMachine:
 
     def on_event_play_content(self, data: dict) -> None:
         LOGGER.debug("On Event PlayContent: %s", data)
+        self._available = True
 
         if self._last_event_play_content == data:
             LOGGER.debug("Event PlayContent is identical to last event. Ignoring")
@@ -99,6 +107,8 @@ class MediaReceiverStateMachine:
 
     def on_poll_player_state(self, data: dict) -> None:
         LOGGER.debug("On Poll PlayerState: %s", data)
+        self._available = True
+
         if self._last_poll_player_state == data:
             LOGGER.debug("Poll PlayerState is identical to last poll. Ignoring")
             return
@@ -157,3 +167,7 @@ class MediaReceiverStateMachine:
 
         self.program_current = None
         self.program_next = None
+
+    @property
+    def available(self) -> bool:
+        return self._available

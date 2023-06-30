@@ -1,7 +1,6 @@
 """Support for Denon AVR receivers using their HTTP interface."""
 from __future__ import annotations
 
-import asyncio
 import json
 from collections.abc import Mapping
 from datetime import timedelta
@@ -25,13 +24,16 @@ from homeassistant.const import (
     EVENT_HOMEASSISTANT_STOP,
 )
 from homeassistant.core import Event, HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import entity_platform, instance_id
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from httpcore import TimeoutException
 
 from custom_components.magentatv import async_get_notification_server
+from custom_components.magentatv.api.exceptions import (
+    CommunicationException,
+    CommunicationTimeoutException,
+    PairingTimeoutException,
+)
 
 from .api import Client, KeyCode, MediaReceiverStateMachine, NotifyServer, State
 from .const import (
@@ -39,7 +41,6 @@ from .const import (
     DOMAIN,
     LOGGER,
     SERVICE_SEND_KEY,
-    SERVICE_SEND_TEXT,
     key_code,
 )
 
@@ -78,14 +79,7 @@ async def async_setup_entry(
         """Close connection on HA Stop."""
         await _client.async_close()
 
-    config_entry.async_on_unload(
-        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, async_close_connection)
-    )
-
-    try:
-        await _client.async_pair()
-    except (asyncio.TimeoutError, TimeoutException) as ex:
-        raise ConfigEntryNotReady(f"Timeout while connecting to {_host}") from ex
+    config_entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, async_close_connection))
 
     entities.append(
         MediaReceiver(
@@ -105,13 +99,15 @@ async def async_setup_entry(
         },
         "send_key",
     )
-    platform.async_register_entity_service(
-        SERVICE_SEND_TEXT,
-        {
-            vol.Required("text"): str,
-        },
-        "send_text",
-    )
+
+    ## Currently not working
+    # platform.async_register_entity_service(
+    #     SERVICE_SEND_TEXT,
+    #     {
+    #         vol.Required("text"): str,
+    #     },
+    #     "send_text",
+    # )
 
 
 class MediaReceiver(MediaPlayerEntity):
@@ -154,13 +150,9 @@ class MediaReceiver(MediaPlayerEntity):
     async def _async_on_event(self, changes):
         LOGGER.debug("%s: Event %s", self.entity_id, changes)
         if "STB_playContent" in changes:
-            self._state_machine.on_event_play_content(
-                json.loads(changes["STB_playContent"])
-            )
+            self._state_machine.on_event_play_content(json.loads(changes["STB_playContent"]))
         elif "STB_EitChanged" in changes:
-            self._state_machine.on_event_eit_changed(
-                json.loads(changes["STB_EitChanged"])
-            )
+            self._state_machine.on_event_eit_changed(json.loads(changes["STB_EitChanged"]))
         elif "messageBody" in changes and "X-pairingCheck" in changes["messageBody"]:
             return  # ignore event
         else:
@@ -176,8 +168,6 @@ class MediaReceiver(MediaPlayerEntity):
         # subscibe for player events
         self._client.subscribe(self._async_on_event)
 
-        # await self._client.async_pair()
-
         # trigger manual update
         await self.async_update()
         self.async_write_ha_state()
@@ -187,8 +177,19 @@ class MediaReceiver(MediaPlayerEntity):
         # await self._notify_server.async_stop()
 
     async def async_update(self) -> None:
-        data = await self._client.async_get_player_state()
-        self._state_machine.on_poll_player_state(data)
+        try:
+            if not self._client.is_paired():
+                await self._client.async_pair()
+
+            self._state_machine.on_poll_player_state(await self._client.async_get_player_state())
+        except (PairingTimeoutException, CommunicationTimeoutException, CommunicationException):
+            self._state_machine.on_connection_error()
+            # raise ex
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self._attr_available and self._state_machine.available
 
     @property
     def state(self) -> MediaPlayerState | None:

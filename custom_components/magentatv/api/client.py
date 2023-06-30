@@ -5,12 +5,23 @@ import asyncio
 import xml.etree.ElementTree as Et
 from collections.abc import Mapping
 from urllib.parse import urlencode
+from xml.sax.saxutils import escape
 
 from async_upnp_client.aiohttp import AiohttpRequester
+from async_upnp_client.exceptions import UpnpCommunicationError, UpnpConnectionTimeoutError
 
 from .const import LOGGER, KeyCode
+from .exceptions import (
+    CommunicationException,
+    CommunicationTimeoutException,
+    NotPairedException,
+    PairingTimeoutException,
+)
 from .notify_server import NotifyServer
 from .utils import magneta_hash
+
+PAIRING_EVENT_TIMEOUT = 5
+PAIRING_ATTEMPTS = 3
 
 
 class Client:
@@ -34,13 +45,13 @@ class Client:
         self._terminal_id = magneta_hash(instance_id)
 
         self._user_id = magneta_hash(user_id)
-        self._requester = AiohttpRequester(
-            http_headers={"User-Agent": "Homeassistant MagentaTV Integration"}
-        )
+        self._requester = AiohttpRequester(http_headers={"User-Agent": "Homeassistant MagentaTV Integration"})
 
         self._verification_code = None
 
         self._event_registration_id = None
+        self._pairing_event = asyncio.Event()
+
         self._event_listeners = []
 
     def subscribe(self, callback):
@@ -50,57 +61,71 @@ class Client:
     async def async_close(self):
         if self._event_registration_id:
             await self._notify_server.async_unsubscribe(self._event_registration_id)
+            self._event_registration_id = None
+        self._pairing_event.clear()
+        self._verification_code = None
+
+    async def _on_event(self, changes):
+        # is paired:
+        if self._pairing_event.is_set():
+            # notify listeners
+            asyncio.gather(*[listener(changes) for listener in self._event_listeners])
+        elif "messageBody" in changes:
+            body = changes.get("messageBody")
+            if "X-pairingCheck:" in body:
+                pairing_code = changes.get("messageBody").removeprefix("X-pairingCheck:")
+                self._verification_code = magneta_hash(pairing_code + self._terminal_id + self._user_id)
+                self._pairing_event.set()
+
+    async def _register_for_events(self):
+        self._event_registration_id = await self._notify_server._async_subscribe_to_service(
+            (self._host, self._port),
+            "X-CTC_RemotePairing",
+            self._on_event,
+        )
+        LOGGER.debug(
+            "Registered for events on %s. ID: %s",
+            self._host,
+            self._event_registration_id,
+        )
 
     async def async_pair(self) -> str:
-        _pairing_event = asyncio.Event()
-
-        async def _async_on_pair_event(changes):
-            if _pairing_event.is_set():
-                asyncio.gather(
-                    *[listener(changes) for listener in self._event_listeners]
-                )
-            if "messageBody" in changes:
-                pairing_code = changes.get("messageBody").removeprefix(
-                    "X-pairingCheck:"
-                )
-                self._verification_code = magneta_hash(
-                    pairing_code + self._terminal_id + self._user_id
-                )
-                _pairing_event.set()
-
-        while not _pairing_event.is_set():
+        attempts = 0
+        while not self._pairing_event.is_set():
+            attempts += 1
             try:
-                self._event_registration_id = (
-                    await self._notify_server.async_subscribe_to_service(
-                        (self._host, self._port),
-                        "X-CTC_RemotePairing",
-                        _async_on_pair_event,
-                    )
-                )
+                await self._register_for_events()
 
-                LOGGER.debug(
-                    "Event Registration ID of %s: %s",
-                    self._host,
-                    self._event_registration_id,
-                )
                 await self._async_send_pairing_request()
+
                 LOGGER.info("Waiting for Pairing Code")
-                await asyncio.wait_for(_pairing_event.wait(), timeout=10)
+                await asyncio.wait_for(self._pairing_event.wait(), timeout=PAIRING_EVENT_TIMEOUT)
                 LOGGER.info("Received Pairing Code")
+
                 await self._async_verify_pairing()
                 LOGGER.info("Pairing Verified. Success !")
-            except (
-                asyncio.CancelledError,
-                asyncio.TimeoutError,
-            ) as ex:
-                LOGGER.warning("Pairing Issue", exc_info=ex)
-                raise ex
+            except (asyncio.CancelledError, asyncio.TimeoutError) as ex:
+                # pairing was not successfull, reset the client to start fresh
+                await self.async_close()
 
-        assert self._verification_code is not None
+                LOGGER.warning("Pairing Timed out", exc_info=ex)
+                if attempts > PAIRING_ATTEMPTS:
+                    raise PairingTimeoutException(
+                        f"No pairingCode received from the receiver within {attempts} attempts waiting {PAIRING_EVENT_TIMEOUT} each"
+                    ) from None
 
+        self.assert_paired()
         return self._verification_code
 
+    def is_paired(self) -> bool:
+        return self._verification_code is not None
+
+    def assert_paired(self):
+        if self._verification_code is None:
+            raise NotPairedException("Client needs to be paired in order to use this function")
+
     async def async_get_player_state(self) -> str:
+        self.assert_paired()
         response = await self._async_send_upnp_soap(
             "X-CTC_RemotePairing",
             "X-getPlayerState",
@@ -129,6 +154,8 @@ class Client:
         assert response[0] == 200
 
     async def _async_verify_pairing(self):
+        self.assert_paired()
+
         response = await self._async_send_upnp_soap(
             "X-CTC_RemotePairing",
             "X-pairingCheck",
@@ -144,29 +171,35 @@ class Client:
     async def _async_send_upnp_soap(
         self, service: str, action: str, attributes: Mapping[str, str]
     ) -> tuple[int, Mapping, str]:
-        attributes = "".join([f"   <{k}>{v}</{k}>\n" for k, v in attributes.items()])
-        full_body = (
-            '<?xml version="1.0" encoding="utf-8"?>\n'
-            '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">\n'
-            " <s:Body>\n"
-            f'  <u:{action} xmlns:u="urn:schemas-upnp-org:service:{service}:1">\n'
-            f"{attributes}"
-            f"  </u:{action}>\n"
-            " </s:Body>\n"
-            "</s:Envelope>"
-        )
-        return await self._requester.async_http_request(
-            method="POST",
-            url=f"{self._url}/upnp/service/{service}/Control",
-            headers={
-                "SOAPACTION": f"urn:schemas-upnp-org:service:{service}:1#{action}",
-                "HOST": f"{self._host}:{self._port}",
-                "Content-Type": 'text/xml; charset="utf-8"',
-            },
-            body=full_body,
-        )
+        try:
+            attributes = "".join([f"   <{k}>{escape(v)}</{k}>\n" for k, v in attributes.items()])
+            full_body = (
+                '<?xml version="1.0" encoding="utf-8"?>\n'
+                '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">\n'
+                " <s:Body>\n"
+                f'  <u:{action} xmlns:u="urn:schemas-upnp-org:service:{service}:1">\n'
+                f"{attributes}"
+                f"  </u:{action}>\n"
+                " </s:Body>\n"
+                "</s:Envelope>"
+            )
+            return await self._requester.async_http_request(
+                method="POST",
+                url=f"{self._url}/upnp/service/{service}/Control",
+                headers={
+                    "SOAPACTION": f"urn:schemas-upnp-org:service:{service}:1#{action}",
+                    "HOST": f"{self._host}:{self._port}",
+                    "Content-Type": 'text/xml; charset="utf-8"',
+                },
+                body=full_body,
+            )
+        except UpnpConnectionTimeoutError as ex:
+            raise CommunicationTimeoutException() from ex
+        except UpnpCommunicationError as ex:
+            raise CommunicationException() from ex
 
     async def async_send_action(self):
+        self.assert_paired()
         # TODO - make it work
 
         params = {
@@ -200,7 +233,7 @@ class Client:
         LOGGER.debug("%s: %s", "Play", response[2])
 
     async def async_send_key(self, key: KeyCode):
-        assert self._verification_code is not None
+        self.assert_paired()
         response = await self._async_send_upnp_soap(
             "X-CTC_RemoteControl",
             "X_CTC_RemoteKey",
@@ -210,9 +243,11 @@ class Client:
             },
         )
         LOGGER.info("%s - %s: %s", "RemoteKey", key, response)
+        assert response[0] == 200
 
     async def async_send_character_input(self, character_input: str):
-        assert self._verification_code is not None
+        self.assert_paired()
+        assert "^" not in character_input  # broken
         response = await self._async_send_upnp_soap(
             "X-CTC_RemoteControl",
             "X_CTC_RemoteKey",
@@ -221,7 +256,5 @@ class Client:
                 "KeyCode": f"characterInput={character_input}^{self._terminal_id}:{self._verification_code}^userID:{self._user_id}",
             },
         )
-        LOGGER.info(
-            "%s - '%s': %s", "Send Character Input", character_input, response[2]
-        )
+        LOGGER.info("%s - '%s': %s", "Send Character Input", character_input, response[2])
         assert response[0] == 200

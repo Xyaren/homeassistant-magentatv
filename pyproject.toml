@@ -43,9 +43,16 @@ ignore = [
     "E731",  # do not assign a lambda expression, use a def
     "UP006", # keep-runtime-typing
     "UP007", # keep-runtime-typing
+    "N818",
 ]
 
 exclude = []
+
+# Allow lines to be as long as 120 characters.
+line-length = 120
+
+[tool.black]
+line-length = 120
 
 [tool.ruff.flake8-pytest-style]
 fixture-parentheses = false
