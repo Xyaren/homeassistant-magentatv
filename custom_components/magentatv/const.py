@@ -2,8 +2,9 @@
 from logging import Logger, getLogger
 from typing import Any
 
-from custom_components.magentatv.api.const import KeyCode
 import voluptuous as vol
+
+from custom_components.magentatv.api.const import KeyCode
 
 LOGGER: Logger = getLogger(__package__)
 

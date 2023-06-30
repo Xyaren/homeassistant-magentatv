@@ -4,3 +4,4 @@ pip>=21.0,<23.2
 ruff==0.0.275
 colorlog==6.7.0
 ruamel.yaml==0.17.32
+aiohttp_cors==0.7.0

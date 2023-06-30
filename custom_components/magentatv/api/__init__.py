@@ -1,11 +1,11 @@
-from .api import PairingClient
-from .api_event import EitChangedEvent, PlayContentEvent
-from .api_notify_server import Callback, NotifyServer
-from .state_machine import MediaReceiverStateMachine, State
+from .client import Client
 from .const import KeyCode
+from .event_model import EitChangedEvent, PlayContentEvent
+from .notify_server import Callback, NotifyServer
+from .state_machine import MediaReceiverStateMachine, State
 
 __all__ = [
-    "PairingClient",
+    "Client",
     "NotifyServer",
     "Callback",
     "EitChangedEvent",

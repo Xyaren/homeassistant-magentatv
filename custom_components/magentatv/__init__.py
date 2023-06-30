@@ -14,7 +14,7 @@ from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 
-from custom_components.magentatv.api.api_notify_server import NotifyServer
+from custom_components.magentatv.api import NotifyServer
 
 from .const import (
     CONF_ADVERTISE_ADDRESS,

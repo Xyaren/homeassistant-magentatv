@@ -12,7 +12,7 @@ def assert_off(sm: MediaReceiverStateMachine):
 
 
 def assert_non_state_attributes_none(sm: MediaReceiverStateMachine):
-    assert sm.chanKey is None
+    assert sm.chan_key is None
     assert sm.duration is None
     assert sm.position is None
     assert sm.program_current is None
@@ -118,7 +118,7 @@ def test_state_machine_shallow_sleep_then_on():
             }
         )
         assert sm.state == State.BUFFERING  # eit event should not change state
-        assert sm.chanKey == 5
+        assert sm.chan_key == 5
         assert sm.duration is None
         assert sm.position is None
         assert (
@@ -130,7 +130,7 @@ def test_state_machine_shallow_sleep_then_on():
         {"new_play_mode": 4, "playBackState": 1, "mediaType": 1, "mediaCode": "3710"}
     )
     assert sm.state == State.PLAYING
-    assert sm.chanKey == 5
+    assert sm.chan_key == 5
     assert sm.duration == 0
     assert sm.position == 0
     assert (
@@ -149,7 +149,7 @@ def test_state_machine_shallow_sleep_then_on():
             }
         )
         assert sm.state == State.PLAYING  # should be ignored
-        assert sm.chanKey == 5
+        assert sm.chan_key == 5
         assert sm.duration == 0
         assert sm.position == 0
         assert (
@@ -169,7 +169,7 @@ def test_state_machine_shallow_sleep_then_on():
         }
     )
     assert sm.state == State.PLAYING  # should be ignored
-    assert sm.chanKey == 5
+    assert sm.chan_key == 5
     assert sm.duration == 5
     assert sm.position == 5
     assert (
@@ -188,7 +188,7 @@ def test_state_machine_shallow_sleep_then_on():
         }
     )
     assert sm.state == State.PLAYING
-    assert sm.chanKey == 5
+    assert sm.chan_key == 5
     assert sm.duration == 15
     assert sm.position == 15
     assert (
@@ -253,7 +253,7 @@ def test_state_machine_shallow_sleep_then_on_without_events():
         }
     )
     assert sm.state == State.PLAYING
-    assert sm.chanKey == 5
+    assert sm.chan_key == 5
     assert sm.duration == 5
     assert sm.position == 5
     assert sm.program_current is None
@@ -271,7 +271,7 @@ def test_state_machine_shallow_sleep_then_on_without_events():
     )
     # treated as unknwon
     assert sm.state == State.PLAYING
-    assert sm.chanKey == 5
+    assert sm.chan_key == 5
     assert sm.duration == 15
     assert sm.position == 15
     assert sm.program_current is None
@@ -306,7 +306,7 @@ def test_on_then_channel_change():
         }
     )
     assert sm.state == State.PLAYING
-    assert sm.chanKey == 1
+    assert sm.chan_key == 1
     assert sm.duration == 8
     assert sm.position == 8
     assert sm.program_current is None
@@ -316,7 +316,7 @@ def test_on_then_channel_change():
         {"new_play_mode": 20, "playBackState": 1, "mediaType": 1, "mediaCode": "3479"}
     )
     assert sm.state == State.BUFFERING
-    assert sm.chanKey == 1  # ?
+    assert sm.chan_key == 1  # ?
     assert sm.duration is None
     assert sm.position is None
     assert sm.program_current is None
@@ -326,7 +326,7 @@ def test_on_then_channel_change():
         {"new_play_mode": 20, "playBackState": 1, "mediaType": 1, "mediaCode": "3733"}
     )
     assert sm.state == State.BUFFERING
-    assert sm.chanKey == 1
+    assert sm.chan_key == 1
     assert sm.duration is None
     assert sm.position is None
     assert sm.program_current is None
@@ -372,7 +372,7 @@ def test_on_then_channel_change():
         }
     )
     assert sm.state == State.BUFFERING
-    assert sm.chanKey == 2
+    assert sm.chan_key == 2
     assert sm.duration is None
     assert sm.position is None
     assert sm.program_current.short_event[0].event_name == "Aktenzeichen XY... Ungelöst"
@@ -418,7 +418,7 @@ def test_on_then_channel_change():
     )
 
     assert sm.state == State.BUFFERING
-    assert sm.chanKey == 2
+    assert sm.chan_key == 2
     assert sm.duration is None
     assert sm.position is None
     assert sm.program_current.short_event[0].event_name == "Aktenzeichen XY... Ungelöst"
@@ -428,7 +428,7 @@ def test_on_then_channel_change():
     )
 
     assert sm.state == State.PLAYING
-    assert sm.chanKey == 2
+    assert sm.chan_key == 2
     assert sm.duration == 0
     assert sm.position == 0
     assert sm.program_current.short_event[0].event_name == "Aktenzeichen XY... Ungelöst"
@@ -444,7 +444,7 @@ def test_on_then_channel_change():
         )
 
         assert sm.state == State.PLAYING
-        assert sm.chanKey == 2
+        assert sm.chan_key == 2
         assert sm.duration == 0
         assert sm.position == 0
         assert (
@@ -465,7 +465,7 @@ def test_on_then_channel_change():
     )
 
     assert sm.state == State.PLAYING
-    assert sm.chanKey == 2
+    assert sm.chan_key == 2
     assert sm.duration == 783
     assert sm.position == 783
     assert sm.program_current.short_event[0].event_name == "Aktenzeichen XY... Ungelöst"
@@ -487,7 +487,7 @@ def test_on_pause_then_play():
         }
     )
     assert sm.state == State.PLAYING
-    assert sm.chanKey == 2
+    assert sm.chan_key == 2
     assert sm.duration == 1703
     assert sm.position == 1703
 
@@ -505,7 +505,7 @@ def test_on_pause_then_play():
         }
     )
     assert sm.state == State.PAUSED
-    assert sm.chanKey == 2
+    assert sm.chan_key == 2
     assert sm.duration == 1721
     assert sm.position == 1718
 
@@ -521,7 +521,7 @@ def test_on_pause_then_play():
         }
     )
     assert sm.state == State.PAUSED
-    assert sm.chanKey == 2
+    assert sm.chan_key == 2
     assert sm.duration == 1723
     assert sm.position == 1718
 
@@ -537,7 +537,7 @@ def test_on_pause_then_play():
         }
     )
     assert sm.state == State.PAUSED
-    assert sm.chanKey == 2
+    assert sm.chan_key == 2
     assert sm.duration == 1733
     assert sm.position == 1718
 
@@ -554,7 +554,7 @@ def test_on_pause_then_play():
         }
     )
     assert sm.state == State.PLAYING
-    assert sm.chanKey == 2
+    assert sm.chan_key == 2
     assert sm.duration == 1743
     assert sm.position == 1718
 
@@ -570,7 +570,7 @@ def test_on_pause_then_play():
         }
     )
     assert sm.state == State.PLAYING
-    assert sm.chanKey == 2
+    assert sm.chan_key == 2
     assert sm.duration == 1743
     assert sm.position == 1719
 
@@ -586,6 +586,6 @@ def test_on_pause_then_play():
         }
     )
     assert sm.state == State.PLAYING
-    assert sm.chanKey == 2
+    assert sm.chan_key == 2
     assert sm.duration == 1753
     assert sm.position == 1728

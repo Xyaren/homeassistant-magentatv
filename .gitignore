@@ -9,6 +9,9 @@ pytest.xml
 # misc
 .coverage
 .vscode
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 coverage.xml
 
 # Home Assistant configuration

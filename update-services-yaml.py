@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
-from ruamel.yaml import YAML
 import os
+
+from ruamel.yaml import YAML
+
 from custom_components.magentatv.api.const import KeyCode
 
 services_file = os.path.dirname(__file__) + "/custom_components/magentatv/services.yaml"

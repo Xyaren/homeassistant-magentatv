@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "charliermarsh.ruff",
+    "github.vscode-github-actions",
+    "github.vscode-pull-request-github",
+    "inlang.vs-code-extension",
+    "ms-python.black-formatter",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "redhat.vscode-yaml",
+    "ryanluker.vscode-coverage-gutters",
+    "tamasfe.even-better-toml"
+  ]
+}

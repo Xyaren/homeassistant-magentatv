@@ -13,6 +13,7 @@ from async_upnp_client.description_cache import DescriptionCache
 from homeassistant import config_entries
 from homeassistant.components import ssdp
 from homeassistant.const import (
+    ATTR_MANUFACTURER,
     CONF_HOST,
     CONF_ID,
     CONF_MODEL,
@@ -27,7 +28,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from custom_components.magentatv import async_get_notification_server
 
-from .api import PairingClient
+from .api import Client
 from .const import CONF_USER_ID, DATA_USER_ID, DOMAIN, LOGGER
 
 FlowInput = Mapping[str, Any] | None
@@ -163,7 +164,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_PORT: self.port,
                 CONF_MODEL: self.model_name + "/" + self.model_number,
                 CONF_TYPE: "Media Receiver",
-                "manufacturer": self.manufacturer,
+                ATTR_MANUFACTURER: self.manufacturer,
                 CONF_ID: self._udn,
                 CONF_UNIQUE_ID: self._udn,
                 CONF_URL: self.descriptor_url,
@@ -262,7 +263,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_PORT: self.port,
                     CONF_MODEL: self.model_name + "/" + self.model_number,
                     CONF_TYPE: "Media Receiver",
-                    "manufacturer": self.manufacturer,
+                    ATTR_MANUFACTURER: self.manufacturer,
                     CONF_ID: self._udn,
                     CONF_UNIQUE_ID: self._udn,
                     CONF_URL: self.descriptor_url,
@@ -297,7 +298,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def _async_task_pair(self):
         try:
             _notify_server = await async_get_notification_server(hass=self.hass)
-            client = PairingClient(
+            client = Client(
                 host=self.host,
                 port=self.port,
                 user_id=self.user_id,
@@ -334,12 +335,11 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_PORT: self.port,
                 CONF_MODEL: self.model_name + "/" + self.model_number,
                 CONF_TYPE: "Media Receiver",
-                "manufacturer": self.manufacturer,
+                ATTR_MANUFACTURER: self.manufacturer,
                 CONF_ID: self._udn,
                 CONF_UNIQUE_ID: self._udn,
                 CONF_URL: self.descriptor_url,
                 CONF_USER_ID: self.user_id,
-                # "verification_code": self.verification_code,
             },
         )
 

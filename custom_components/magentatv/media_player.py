@@ -1,19 +1,22 @@
 """Support for Denon AVR receivers using their HTTP interface."""
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import Mapping
 from datetime import timedelta
 
+import voluptuous as vol
 from homeassistant.components.media_player import (
+    MediaPlayerDeviceClass,
     MediaPlayerEntity,
     MediaPlayerEntityFeature,
     MediaPlayerState,
     MediaType,
-    MediaPlayerDeviceClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    ATTR_MANUFACTURER,
     CONF_HOST,
     CONF_ID,
     CONF_MODEL,
@@ -22,28 +25,16 @@ from homeassistant.const import (
     EVENT_HOMEASSISTANT_STOP,
 )
 from homeassistant.core import Event, HomeAssistant
-from homeassistant.helpers import instance_id
+from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import entity_platform, instance_id
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers import entity_platform
+from httpcore import TimeoutException
 
 from custom_components.magentatv import async_get_notification_server
 
-from .api import MediaReceiverStateMachine, NotifyServer, PairingClient, State, KeyCode
+from .api import Client, KeyCode, MediaReceiverStateMachine, NotifyServer, State
 from .const import CONF_USER_ID, DOMAIN, LOGGER, SERVICE_SEND_KEY, key_code
-import voluptuous as vol
-
-
-SUPPORTED_FEATURES = (
-    0
-    | MediaPlayerEntityFeature.PLAY
-    | MediaPlayerEntityFeature.PAUSE
-    # | MediaPlayerEntityFeature.STOP
-    | MediaPlayerEntityFeature.VOLUME_STEP
-    | MediaPlayerEntityFeature.VOLUME_MUTE
-    | MediaPlayerEntityFeature.TURN_OFF
-    | MediaPlayerEntityFeature.TURN_ON
-)
 
 SCAN_INTERVAL = timedelta(seconds=10)  # only backup in case events have been missed
 PARALLEL_UPDATES = 0
@@ -68,7 +59,7 @@ async def async_setup_entry(
     _host = config_entry.data.get(CONF_HOST)
     _port = config_entry.data.get(CONF_PORT)
 
-    _client = PairingClient(
+    _client = Client(
         host=_host,
         port=_port,
         user_id=config_entry.data.get(CONF_USER_ID),
@@ -83,6 +74,11 @@ async def async_setup_entry(
     config_entry.async_on_unload(
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, async_close_connection)
     )
+
+    try:
+        await _client.async_pair()
+    except (asyncio.TimeoutError, TimeoutException) as ex:
+        raise ConfigEntryNotReady(f"Timeout while connecting to {_host}") from ex
 
     entities.append(
         MediaReceiver(
@@ -109,13 +105,13 @@ class MediaReceiver(MediaPlayerEntity):
 
     _last_events: list[dict] = []
 
-    _client: PairingClient
+    _client: Client
     _notify_server: NotifyServer
 
     def __init__(
         self,
         config_entry: ConfigEntry,
-        client: PairingClient,
+        client: Client,
         # notify_server: NotifyServer,
     ) -> None:
         """Initialize the device."""
@@ -133,7 +129,7 @@ class MediaReceiver(MediaPlayerEntity):
             name=config_entry.title,
             model=config_entry.data.get(CONF_MODEL),
             configuration_url=config_entry.data.get(CONF_URL),
-            manufacturer=config_entry.data.get("manufacturer"),
+            manufacturer=config_entry.data.get(ATTR_MANUFACTURER),
         )
         # self._attr_icon = "mdi:audio-video"
         self._attr_device_class = MediaPlayerDeviceClass.RECEIVER
@@ -166,7 +162,7 @@ class MediaReceiver(MediaPlayerEntity):
         # subscibe for player events
         self._client.subscribe(self._async_on_event)
 
-        await self._client.async_pair()
+        # await self._client.async_pair()
 
         # trigger manual update
         await self.async_update()
@@ -197,27 +193,13 @@ class MediaReceiver(MediaPlayerEntity):
             return " - ".join([x for x in _parts if x is not None and x != ""])
         return None
 
-    # @property
-    # def extra_state_attributes(self):
-    #     """Return entity specific state attributes."""
-    #     return {
-    #         "program_current": self._state_machine.program_current.dict()
-    #         if self._state_machine.program_current is not None
-    #         else None,
-    #         "program_next": self._state_machine.program_next.dict()
-    #         if self._state_machine.program_next is not None
-    #         else None,
-    #     }
-
     @property
     def media_channel(self) -> str | None:
-        return self._state_machine.chanKey
+        return self._state_machine.chan_key
 
     @property
     def supported_features(self) -> MediaPlayerEntityFeature:
         """Flag media player features that are supported."""
-        # return SUPPORTED_FEATURES
-
         features = 0
 
         if self.state in [MediaPlayerState.OFF]:
@@ -249,9 +231,6 @@ class MediaReceiver(MediaPlayerEntity):
     @property
     def media_content_type(self) -> MediaType | str | None:
         """Content type of current playing media."""
-        # TODO
-        # if self._last_event_play_content.media_type == 1:
-        #    return MediaType.CHANNEL
         return MediaType.CHANNEL
 
     async def async_turn_on(self) -> None:

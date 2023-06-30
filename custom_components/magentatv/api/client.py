@@ -2,18 +2,18 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as Et
 from collections.abc import Mapping
 from urllib.parse import urlencode
 
 from async_upnp_client.aiohttp import AiohttpRequester
 
-from .api_notify_server import NotifyServer
 from .const import LOGGER, KeyCode
+from .notify_server import NotifyServer
+from .utils import magneta_hash
 
 
-class PairingClient:
+class Client:
     """Sample API Client."""
 
     def __init__(
@@ -31,25 +31,17 @@ class PairingClient:
 
         self._notify_server = notify_server
 
-        self._terminal_id = (
-            hashlib.md5((instance_id).encode("UTF-8")).hexdigest().upper()
-        )
+        self._terminal_id = magneta_hash(instance_id)
 
-        self._user_id = hashlib.md5(user_id.encode("UTF-8")).hexdigest().upper()
+        self._user_id = magneta_hash(user_id)
         self._requester = AiohttpRequester(
-            http_headers={
-                "User-Agent": "Homeassistant MagentaTV Integration"
-                # "User-Agent": "Darwin/16.5.0 UPnP/1.0 HUAWEI_iCOS/iCOS V1R1C00 DLNADOC/1.50"
-            }
+            http_headers={"User-Agent": "Homeassistant MagentaTV Integration"}
         )
 
         self._verification_code = None
 
         self._event_registration_id = None
         self._event_listeners = []
-
-    # async def _async_on_event(self, changes):
-    #     asyncio.gather(*[listener(changes) for listener in self._event_listeners])
 
     def subscribe(self, callback):
         if callback not in self._event_listeners:
@@ -71,14 +63,8 @@ class PairingClient:
                 pairing_code = changes.get("messageBody").removeprefix(
                     "X-pairingCheck:"
                 )
-                self._verification_code = (
-                    hashlib.md5(
-                        (pairing_code + self._terminal_id + self._user_id).encode(
-                            "UTF-8"
-                        )
-                    )
-                    .hexdigest()
-                    .upper()
+                self._verification_code = magneta_hash(
+                    pairing_code + self._terminal_id + self._user_id
                 )
                 _pairing_event.set()
 
@@ -124,7 +110,7 @@ class PairingClient:
             },
         )
         assert response[0] == 200
-        tree = ET.fromstring(text=response[2])
+        tree = Et.fromstring(text=response[2])
         result = {}
         for child in tree[0][0]:
             result[child.tag] = child.text

@@ -4,7 +4,7 @@ from logging import Logger, getLogger
 LOGGER: Logger = getLogger(__package__)
 
 
-class KeyCode(Enum):
+class KeyCode(str, Enum):
     BACK = "0x0008"
     ENTER = "0x000D"
     OK = "0x000D"
@@ -105,3 +105,6 @@ class KeyCode(Enum):
     DVB_TXT = "0x0560"
     TTEXT = "0x0560"
     MULTIVIEW = "0x0562"
+
+    def __str__(self) -> str:
+        return str.__str__(self)

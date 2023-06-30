@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable, Mapping
 from http import HTTPStatus
 
 import aiohttp
-import defusedxml.ElementTree as DET
+import defusedxml.ElementTree as Et
 from aiohttp import web
 from async_upnp_client.aiohttp import AiohttpRequester
 from async_upnp_client.client import NS
@@ -288,7 +288,7 @@ class NotifyServer:
         # decode event and send updates to service
         changes = {}
         stripped_body = body.rstrip(" \t\r\n\0")
-        el_root = DET.fromstring(stripped_body)
+        el_root = Et.fromstring(stripped_body)
         for el_property in el_root.findall("./event:property", NS):
             for el_state_var in el_property:
                 name = el_state_var.tag

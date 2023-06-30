@@ -1,7 +1,7 @@
 from enum import Enum
 from logging import Logger, getLogger
 
-from .api_event import ProgramInfo
+from .event_model import ProgramInfo
 
 LOGGER: Logger = getLogger(__package__ + ".state_machine")
 
@@ -19,7 +19,7 @@ class MediaReceiverStateMachine:
     state: State | None = None
     duration: int | None = None
     position: int | None = None
-    chanKey: int | None = None
+    chan_key: int | None = None
 
     program_current: ProgramInfo | None = None
     program_next: ProgramInfo | None = None
@@ -42,7 +42,7 @@ class MediaReceiverStateMachine:
 
     def _on_event_eit_changed_changed(self, data) -> None:
         if "channel_num" in data:
-            self.chanKey = int(data["channel_num"])
+            self.chan_key = int(data["channel_num"])
 
         if "program_info" in data:
             programm_info = data["program_info"]
@@ -130,7 +130,7 @@ class MediaReceiverStateMachine:
                 if self.state != State.PLAYING:
                     self.state = State.PLAYING
 
-            self.chanKey = int(data["chanKey"])
+            self.chan_key = int(data["chanKey"])
             self.duration = int(data["duration"])
             self.position = int(data["playPostion"])
             return
@@ -151,7 +151,7 @@ class MediaReceiverStateMachine:
             return
 
     def _clear_non_state_attributes(self):
-        self.chanKey = None
+        self.chan_key = None
         self.duration = None
         self.position = None
 
