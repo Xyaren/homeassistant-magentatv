@@ -151,6 +151,8 @@ class MediaReceiver(MediaPlayerEntity):
             self._state_machine.on_event_eit_changed(
                 json.loads(changes["STB_EitChanged"])
             )
+        elif "messageBody" in changes and "X-pairingCheck" in changes["messageBody"]:
+            return  # ignore event
         else:
             raise NotImplementedError()
 
