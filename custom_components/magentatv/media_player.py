@@ -34,7 +34,14 @@ from httpcore import TimeoutException
 from custom_components.magentatv import async_get_notification_server
 
 from .api import Client, KeyCode, MediaReceiverStateMachine, NotifyServer, State
-from .const import CONF_USER_ID, DOMAIN, LOGGER, SERVICE_SEND_KEY, key_code
+from .const import (
+    CONF_USER_ID,
+    DOMAIN,
+    LOGGER,
+    SERVICE_SEND_KEY,
+    SERVICE_SEND_TEXT,
+    key_code,
+)
 
 SCAN_INTERVAL = timedelta(seconds=10)  # only backup in case events have been missed
 PARALLEL_UPDATES = 0
@@ -97,6 +104,13 @@ async def async_setup_entry(
             vol.Required("key_code"): key_code,
         },
         "send_key",
+    )
+    platform.async_register_entity_service(
+        SERVICE_SEND_TEXT,
+        {
+            vol.Required("text"): str,
+        },
+        "send_text",
     )
 
 
@@ -269,3 +283,6 @@ class MediaReceiver(MediaPlayerEntity):
 
     async def send_key(self, key_code: KeyCode) -> None:
         await self._client.async_send_key(key_code)
+
+    async def send_text(self, text: str) -> None:
+        await self._client.async_send_character_input(text)

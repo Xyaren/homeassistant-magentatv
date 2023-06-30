@@ -101,7 +101,9 @@ async def test_entity_loads_data(hass, mock_api_client):
 
 
 async def test_send_key_service(hass: HomeAssistant, mock_api_client: Mock):
-    """Test sensor."""
+    """Test sending a key to the receiver. Test checks if the client is called"""
+    mock_api_client.async_get_player_state.return_value = MOCK_POLL_RESPONSE
+
     MOCK_CONFIG_ENTRY.add_to_hass(hass)
     await hass.config_entries.async_setup(MOCK_CONFIG_ENTRY.entry_id)
     await hass.async_block_till_done()
@@ -118,3 +120,25 @@ async def test_send_key_service(hass: HomeAssistant, mock_api_client: Mock):
     )
     send_key_method: AsyncMock = mock_api_client.async_send_key
     send_key_method.assert_awaited_once_with(KeyCode.NUM0)
+
+
+async def test_send_text_service(hass: HomeAssistant, mock_api_client: Mock):
+    """Test sending text to the receiver. Test checks if the client is called"""
+    mock_api_client.async_get_player_state.return_value = MOCK_POLL_RESPONSE
+
+    MOCK_CONFIG_ENTRY.add_to_hass(hass)
+    await hass.config_entries.async_setup(MOCK_CONFIG_ENTRY.entry_id)
+    await hass.async_block_till_done()
+
+    assert hass.services.has_service(DOMAIN, "send_text")
+    assert await hass.services.async_call(
+        domain=DOMAIN,
+        service="send_text",
+        blocking=True,
+        service_data={
+            "text": "Testing 123",
+            "entity_id": "media_player.livingroom_tv_receiver",
+        },
+    )
+    send_key_method: AsyncMock = mock_api_client.async_send_character_input
+    send_key_method.assert_awaited_once_with("Testing 123")

@@ -221,5 +221,7 @@ class Client:
                 "KeyCode": f"characterInput={character_input}^{self._terminal_id}:{self._verification_code}^userID:{self._user_id}",
             },
         )
-        LOGGER.info("%s - '%s': %s", "Send Character", character_input, response[2])
+        LOGGER.info(
+            "%s - '%s': %s", "Send Character Input", character_input, response[2]
+        )
         assert response[0] == 200

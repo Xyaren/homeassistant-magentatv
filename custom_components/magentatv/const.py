@@ -29,6 +29,7 @@ DATA_ADVERTISE_PORT = CONF_ADVERTISE_PORT
 DATA_NOTIFICATION_SERVER = "notification_server"
 
 SERVICE_SEND_KEY = "send_key"
+SERVICE_SEND_TEXT = "send_text"
 
 
 def key_code(value: Any) -> KeyCode:
