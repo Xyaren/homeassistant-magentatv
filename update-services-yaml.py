@@ -3,6 +3,7 @@
 import os
 
 from ruamel.yaml import YAML
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from custom_components.magentatv.api.const import KeyCode
 
@@ -16,7 +17,9 @@ with open(
 
 # set keys
 key_options = [key.name for key in KeyCode]
-doc["send_key"]["fields"]["key_code"]["selector"]["select"]["options"] = key_options
+doc["send_key"]["fields"]["key_code"]["selector"]["select"]["options"] = [
+    DoubleQuotedScalarString(v) for v in key_options
+]
 
 yaml.indent(mapping=2, sequence=4, offset=2)
 with open(services_file, "w", encoding="utf-8") as f:
