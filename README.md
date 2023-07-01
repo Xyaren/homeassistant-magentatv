@@ -34,10 +34,11 @@ Feel free to contribute!
   Check out the service `magentatv.send_key`
 - Configurable listen/advertised address and port used for receiving events (for runing in Docker or NAT situations)
 - MediaPlayer controls like play/pause/mute/volume/on/off
+- Show the current running channel and program
 
 ### Planned
 - Support more device models
-- Detect if App (Youtube/Prime/Netflix() is currently active on the receiver
+- Detect if App (Youtube/Prime/Netflix) is currently active on the receiver
 - (Unknwon if possible) Start apps like Youtube/Netflix from Homeassistant
 
 ## Installation
