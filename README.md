@@ -4,6 +4,7 @@
 
 [![GitHub Release][releases-shield]][releases]
 [![GitHub Activity][commits-shield]][commits]
+![Dynamic JSON Badge](coverage-shield)
 [![License][license-shield]](LICENSE)
 [![hacs][hacsbadge]][hacs]
 ![Project Maintenance][maintenance-shield]
@@ -135,3 +136,4 @@ If you want to contribute to this please read the [Contribution guidelines](CONT
 [maintenance-shield]: https://img.shields.io/badge/maintainer-%40xyaren-blue.svg?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/xyaren/homeassistant-magentatv.svg?style=for-the-badge
 [releases]: https://github.com/xyaren/homeassistant-magentatv/releases
+[coverage-shield]: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fxyaren.github.io%2Fhomeassistant-magentatv%2Fcoverage%2Fcoverage.json&query=%24.totals.percent_covered_display&suffix=%25&style=for-the-badge&label=Coverage&color=green
