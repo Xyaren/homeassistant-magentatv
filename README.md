@@ -88,32 +88,31 @@ You can control the used port and address used by the integration to receive eve
 In most cases these are not required.
 ```yaml
 magentatv:
-magentatv:
+  ## Telekom user id used as default for configuration flows. Optional.
+  ## Default: None
+  # user_id: 120049010000000017944901
+
   ## Address to listen for UPNP subscription callbacks, must be reachable from the media receivers.
-  ## Default 0.0.0.0
+  ## Default: 0.0.0.0
   # listen_address: "0.0.0.0"
 
   ## Port for UPNP subscription callbacks, must be reachable from the media receivers.
   ## For Homeassistant running in docker, this needs to be mapped.
   ## Default: 11223
-  # listen_port:
-
+  # listen_port: 11223
 
   ## Address to advertise to receiver for callback. This is auto detected by default and only needs to be overwritten in case of nat/docker setups.
   ## This can NOT be a dns name
-  # advertise_address:
+  ## Default: None
+  # advertise_address: "10.1.2.3"
 
-  ## Port to advertise to receiver for callback. This equals the listen_port by default and only needs to be overwritten in case of port mapping
-  # advertise_port:
-
-
-  ## Telekom user id used as default for configuration flows. Optional.
-  ## Default None
-  # user_id: 120049010000000017944901
+  ## Port to advertise to receiver for callback.
+  ## By default the listen_port is used. This only needs to be overwritten in a port-forwarding/docker situation
+  ## Default: None
+  # advertise_port: 32211
 ```
 
-
-## Thanks
+## Special Thanks
 
 Thanks for [@humbertogontijo](https://github.com/humbertogontijo) from [homeassistant-roborock](https://github.com/humbertogontijo/homeassistant-roborock) for providing the inspiration to create an integration on my own.
 Also serving as a reference repository on how to do things.
