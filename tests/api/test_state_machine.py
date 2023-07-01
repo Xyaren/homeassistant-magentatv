@@ -22,6 +22,7 @@ def assert_non_state_attributes_none(sm: MediaReceiverStateMachine):
 def test_state_machine_empty():
     sm = MediaReceiverStateMachine()
     assert_unknwon(sm)
+    assert sm.available is False
 
 
 def test_state_machine_deep_sleep():
@@ -29,6 +30,7 @@ def test_state_machine_deep_sleep():
     for _ in range(4):
         sm.on_poll_player_state({"playBackState": "0"})
         assert_off(sm)
+        assert sm.available is True
 
 
 def test_state_machine_shallow_sleep():
@@ -50,6 +52,7 @@ def test_state_machine_shallow_sleep():
 
         # treated as unknwon
         assert_unknwon(sm)
+        assert sm.available is True
 
 
 def test_state_machine_shallow_sleep_then_on():
@@ -60,10 +63,11 @@ def test_state_machine_shallow_sleep_then_on():
     # start HA
     sm = MediaReceiverStateMachine()
     assert_unknwon(sm)
-    sm.on_poll_player_state(
-        {"chanKey": "5", "mediaCode": "3710", "mediaType": "1", "playBackState": "1"}
-    )
+    assert sm.available is False
+
+    sm.on_poll_player_state({"chanKey": "5", "mediaCode": "3710", "mediaType": "1", "playBackState": "1"})
     assert_unknwon(sm)
+    assert sm.available is True
 
     # turn on MR
     for _ in range(2):
@@ -77,6 +81,7 @@ def test_state_machine_shallow_sleep_then_on():
         )
         assert sm.state == State.BUFFERING
         assert_non_state_attributes_none(sm)
+        assert sm.available is True
     for _ in range(2):
         sm.on_event_eit_changed(
             {
@@ -121,22 +126,16 @@ def test_state_machine_shallow_sleep_then_on():
         assert sm.chan_key == 5
         assert sm.duration is None
         assert sm.position is None
-        assert (
-            sm.program_current.short_event[0].event_name
-            == "Lebensmitteltricks - Lege packt aus"
-        )
+        assert sm.program_current.short_event[0].event_name == "Lebensmitteltricks - Lege packt aus"
+        assert sm.available is True
 
-    sm.on_event_play_content(
-        {"new_play_mode": 4, "playBackState": 1, "mediaType": 1, "mediaCode": "3710"}
-    )
+    sm.on_event_play_content({"new_play_mode": 4, "playBackState": 1, "mediaType": 1, "mediaCode": "3710"})
     assert sm.state == State.PLAYING
     assert sm.chan_key == 5
     assert sm.duration == 0
     assert sm.position == 0
-    assert (
-        sm.program_current.short_event[0].event_name
-        == "Lebensmitteltricks - Lege packt aus"
-    )
+    assert sm.program_current.short_event[0].event_name == "Lebensmitteltricks - Lege packt aus"
+    assert sm.available is True
 
     for _ in range(4):
         # player poll endpoint serves outdated data
@@ -152,10 +151,7 @@ def test_state_machine_shallow_sleep_then_on():
         assert sm.chan_key == 5
         assert sm.duration == 0
         assert sm.position == 0
-        assert (
-            sm.program_current.short_event[0].event_name
-            == "Lebensmitteltricks - Lege packt aus"
-        )
+        assert sm.program_current.short_event[0].event_name == "Lebensmitteltricks - Lege packt aus"
 
     # MR state endpoint serves new data
     sm.on_poll_player_state(
@@ -172,10 +168,8 @@ def test_state_machine_shallow_sleep_then_on():
     assert sm.chan_key == 5
     assert sm.duration == 5
     assert sm.position == 5
-    assert (
-        sm.program_current.short_event[0].event_name
-        == "Lebensmitteltricks - Lege packt aus"
-    )
+    assert sm.program_current.short_event[0].event_name == "Lebensmitteltricks - Lege packt aus"
+    assert sm.available is True
 
     sm.on_poll_player_state(
         {
@@ -191,15 +185,11 @@ def test_state_machine_shallow_sleep_then_on():
     assert sm.chan_key == 5
     assert sm.duration == 15
     assert sm.position == 15
-    assert (
-        sm.program_current.short_event[0].event_name
-        == "Lebensmitteltricks - Lege packt aus"
-    )
+    assert sm.program_current.short_event[0].event_name == "Lebensmitteltricks - Lege packt aus"
+    assert sm.available is True
 
     # turn MR off
-    sm.on_event_play_content(
-        {"new_play_mode": 0, "playBackState": 1, "mediaType": 1, "mediaCode": "3710"}
-    )
+    sm.on_event_play_content({"new_play_mode": 0, "playBackState": 1, "mediaType": 1, "mediaCode": "3710"})
     assert sm.state == State.OFF
     assert_non_state_attributes_none(sm)
 
@@ -214,6 +204,7 @@ def test_state_machine_shallow_sleep_then_on():
         )
         assert sm.state == State.OFF
         assert_non_state_attributes_none(sm)
+        assert sm.available is True
 
 
 def test_state_machine_shallow_sleep_then_on_without_events():
@@ -223,9 +214,7 @@ def test_state_machine_shallow_sleep_then_on_without_events():
     # start HA
     sm = MediaReceiverStateMachine()
     assert_unknwon(sm)
-    sm.on_poll_player_state(
-        {"chanKey": "5", "mediaCode": "3710", "mediaType": "1", "playBackState": "1"}
-    )
+    sm.on_poll_player_state({"chanKey": "5", "mediaCode": "3710", "mediaType": "1", "playBackState": "1"})
     assert_unknwon(sm)
 
     # turn on MR
@@ -312,9 +301,7 @@ def test_on_then_channel_change():
     assert sm.program_current is None
     assert sm.program_next is None
 
-    sm.on_event_play_content(
-        {"new_play_mode": 20, "playBackState": 1, "mediaType": 1, "mediaCode": "3479"}
-    )
+    sm.on_event_play_content({"new_play_mode": 20, "playBackState": 1, "mediaType": 1, "mediaCode": "3479"})
     assert sm.state == State.BUFFERING
     assert sm.chan_key == 1  # ?
     assert sm.duration is None
@@ -322,9 +309,7 @@ def test_on_then_channel_change():
     assert sm.program_current is None
     assert sm.program_next is None
 
-    sm.on_event_play_content(
-        {"new_play_mode": 20, "playBackState": 1, "mediaType": 1, "mediaCode": "3733"}
-    )
+    sm.on_event_play_content({"new_play_mode": 20, "playBackState": 1, "mediaType": 1, "mediaCode": "3733"})
     assert sm.state == State.BUFFERING
     assert sm.chan_key == 1
     assert sm.duration is None
@@ -423,9 +408,7 @@ def test_on_then_channel_change():
     assert sm.position is None
     assert sm.program_current.short_event[0].event_name == "Aktenzeichen XY... Ungelöst"
 
-    sm.on_event_play_content(
-        {"new_play_mode": 4, "playBackState": 1, "mediaType": 1, "mediaCode": "3733"}
-    )
+    sm.on_event_play_content({"new_play_mode": 4, "playBackState": 1, "mediaType": 1, "mediaCode": "3733"})
 
     assert sm.state == State.PLAYING
     assert sm.chan_key == 2
@@ -447,10 +430,7 @@ def test_on_then_channel_change():
         assert sm.chan_key == 2
         assert sm.duration == 0
         assert sm.position == 0
-        assert (
-            sm.program_current.short_event[0].event_name
-            == "Aktenzeichen XY... Ungelöst"
-        )
+        assert sm.program_current.short_event[0].event_name == "Aktenzeichen XY... Ungelöst"
 
     # later
     sm.on_poll_player_state(

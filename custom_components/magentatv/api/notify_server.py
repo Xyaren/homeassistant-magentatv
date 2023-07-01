@@ -4,6 +4,7 @@ import asyncio
 import socket
 from ast import List
 from collections.abc import Awaitable, Callable, Mapping
+from functools import wraps
 from http import HTTPStatus
 
 import aiohttp
@@ -21,6 +22,19 @@ from .exceptions import (
 )
 
 Callback = Callable[[Mapping[str, str]], Awaitable[None]]
+
+
+def wrap_exceptions(f):
+    @wraps(f)
+    def applicator(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except UpnpConnectionTimeoutError as ex:
+            raise CommunicationTimeoutException() from ex
+        except UpnpCommunicationError as ex:
+            raise CommunicationException() from ex
+
+    return applicator
 
 
 class NotifyServer:
@@ -107,70 +121,58 @@ class NotifyServer:
             LOGGER.info("No more subscriptions. Shutting down")
             await self.async_stop()
 
+    @wrap_exceptions
     async def _async_subscribe(self, target, service) -> str:
-        try:
-            url = f"http://{target[0]}:{target[1]}/upnp/service/{service}/Event"
+        url = f"http://{target[0]}:{target[1]}/upnp/service/{service}/Event"
 
-            adv_host, adv_port = self._advertise_ip_port or (None, None)
-            if adv_host is None:
-                adv_host = get_local_ip(target_url=url)
-            if adv_port is None:
-                adv_port = self._listen_ip_port[1]
+        adv_host, adv_port = self._advertise_ip_port or (None, None)
+        if adv_host is None:
+            adv_host = get_local_ip(target_url=url)
+        if adv_port is None:
+            adv_port = self._listen_ip_port[1]
 
-            response = await self._requester.async_http_request(
-                method="SUBSCRIBE",
-                url=url,
-                headers={
-                    "NT": "upnp:event",
-                    "TIMEOUT": f"Second-{self._subscription_timeout}",
-                    "HOST": f"{target[0]}:{target[1]}",
-                    "CALLBACK": f"<http://{adv_host}:{adv_port}/eventSub>",
-                },
-                body=None,
-            )
-            assert response[0] == 200
-            sid = response[1]["SID"]
-            LOGGER.debug("Subscribed %s on %s at %s", sid, service, target)
-            return sid
-        except UpnpConnectionTimeoutError as ex:
-            raise CommunicationTimeoutException() from ex
-        except UpnpCommunicationError as ex:
-            raise CommunicationException() from ex
+        response = await self._requester.async_http_request(
+            method="SUBSCRIBE",
+            url=url,
+            headers={
+                "NT": "upnp:event",
+                "TIMEOUT": f"Second-{self._subscription_timeout}",
+                "HOST": f"{target[0]}:{target[1]}",
+                "CALLBACK": f"<http://{adv_host}:{adv_port}/eventSub>",
+            },
+            body=None,
+        )
+        assert response[0] == 200
+        sid = response[1]["SID"]
+        LOGGER.debug("Subscribed %s on %s at %s", sid, service, target)
+        return sid
 
+    @wrap_exceptions
     async def _async_resubscribe(self, target, service, sid) -> str:
-        try:
-            response = await self._requester.async_http_request(
-                method="SUBSCRIBE",
-                url=f"http://{target[0]}:{target[1]}/upnp/service/{service}/Event",
-                headers={
-                    "SID": sid,
-                    "TIMEOUT": f"Second-{self._subscription_timeout}",
-                },
-                body=None,
-            )
-            assert response[0] == 200
-            return response[1]["SID"]
-        except UpnpConnectionTimeoutError as ex:
-            raise CommunicationTimeoutException() from ex
-        except UpnpCommunicationError as ex:
-            raise CommunicationException() from ex
+        response = await self._requester.async_http_request(
+            method="SUBSCRIBE",
+            url=f"http://{target[0]}:{target[1]}/upnp/service/{service}/Event",
+            headers={
+                "SID": sid,
+                "TIMEOUT": f"Second-{self._subscription_timeout}",
+            },
+            body=None,
+        )
+        assert response[0] == 200
+        return response[1]["SID"]
 
+    @wrap_exceptions
     async def _async_unsubscribe(self, target, service, sid) -> str:
-        try:
-            response = await self._requester.async_http_request(
-                method="UNSUBSCRIBE",
-                url=f"http://{target[0]}:{target[1]}/upnp/service/{service}/Event",
-                headers={
-                    "SID": sid,
-                },
-                body=None,
-            )
-            assert response[0] in [200, 412]
-            LOGGER.debug("Unsubscribed %s on %s at %s", sid, service, target)
-        except UpnpConnectionTimeoutError as ex:
-            raise CommunicationTimeoutException() from ex
-        except UpnpCommunicationError as ex:
-            raise CommunicationException() from ex
+        response = await self._requester.async_http_request(
+            method="UNSUBSCRIBE",
+            url=f"http://{target[0]}:{target[1]}/upnp/service/{service}/Event",
+            headers={
+                "SID": sid,
+            },
+            body=None,
+        )
+        assert response[0] in [200, 412]
+        LOGGER.debug("Unsubscribed %s on %s at %s", sid, service, target)
 
     async def _async_has_subscriptions(self) -> bool:
         async with self.subscription_lock:
