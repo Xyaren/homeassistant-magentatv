@@ -55,9 +55,6 @@ jobs:
       - uses: actions/download-artifact@master
         with:
           name: .coverage
-          path: .coverage
-
-      - run: ls -ahl
 
       - run: coverage json
       - run: mkdir -p ./gh-pages-coverage
@@ -89,11 +86,9 @@ jobs:
       - uses: actions/download-artifact@master
         with:
           name: .coverage
-          path: .coverage
       - uses: actions/download-artifact@master
         with:
           name: pytest.xml
-          path: pytest.xml
 
       - run: coverage xml
       - name: Pytest coverage comment
