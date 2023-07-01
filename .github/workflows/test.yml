@@ -9,12 +9,9 @@ on:
       - "main"
 
 jobs:
-  Test:
-    name: "Pytest"
+  test:
+    name: "Test"
     runs-on: "ubuntu-latest"
-    permissions:
-      issues: write
-      pull-requests: write
     steps:
         - name: "Checkout the repository"
           uses: "actions/checkout@v3.5.3"
@@ -29,11 +26,78 @@ jobs:
           run: pip install -r requirements-dev.txt
 
         - name: "Test"
-          run: pytest tests --doctest-modules --junitxml=pytest.xml --cov --cov=custom_components/ --cov-report=xml --cov-report=term-missing
+          run: pytest tests --doctest-modules --junitxml=pytest.xml --cov --cov=custom_components/ --cov-report=term-missing
 
-        - name: Pytest coverage comment
-          if: ${{ github.event_name == 'pull_request' }}
-          uses: MishaKav/pytest-coverage-comment@main
+        - uses: actions/upload-artifact@master
           with:
-            pytest-xml-coverage-path: ./coverage.xml
-            junitxml-path: ./pytest.xml
+            name: .coverage
+            path: .coverage
+        - uses: actions/upload-artifact@master
+          with:
+            name: pytest.xml
+            path: pytest.xml
+
+  coverage-upload:
+    name: "Coverage Upload"
+    runs-on: "ubuntu-latest"
+    needs: test
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main'}}
+    permissions:
+      contents: write
+    steps:
+      - name: "Set up Python"
+        uses: actions/setup-python@v4.6.1
+        with:
+          python-version: "3.10"
+          cache: "pip"
+      - name: Install coverage.py
+        run: pip install coverage
+
+      - uses: actions/download-artifact@master
+        with:
+          name: .coverage
+          path: .coverage
+
+      - run: coverage json
+      - run: mkdir -p ./gh-pages-coverage
+      - run: mv coverage.json ./gh-pages-coverage
+      - name: Store coverage report in gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: gh-pages-coverage # The folder the action should dep
+          target-folder: coverage
+          commit-message: Upload latest coverage report
+
+  coverage-comment:
+    name: "Coverage Comment"
+    runs-on: "ubuntu-latest"
+    needs: test
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
+    steps:
+      - name: "Set up Python"
+        uses: actions/setup-python@v4.6.1
+        with:
+          python-version: "3.10"
+          cache: "pip"
+      - name: Install coverage.py
+        run: pip install coverage
+
+      - uses: actions/download-artifact@master
+        with:
+          name: .coverage
+          path: .coverage
+      - uses: actions/download-artifact@master
+        with:
+          name: pytest.xml
+          path: pytest.xml
+
+      - run: coverage xml
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: ./coverage.xml
+          junitxml-path: ./pytest.xml
