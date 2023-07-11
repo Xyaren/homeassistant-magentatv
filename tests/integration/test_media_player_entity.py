@@ -121,7 +121,7 @@ async def test_send_key_service(hass: HomeAssistant, mock_api_client: Mock):
     await hass.async_block_till_done()
 
     assert hass.services.has_service(DOMAIN, "send_key")
-    assert await hass.services.async_call(
+    await hass.services.async_call(
         domain=DOMAIN,
         service="send_key",
         blocking=True,
@@ -145,7 +145,7 @@ async def test_service_power_off(hass: HomeAssistant, mock_api_client: Mock):
     await hass.async_block_till_done()
 
     assert hass.services.has_service("media_player", "turn_off")
-    assert await hass.services.async_call(
+    await hass.services.async_call(
         domain="media_player",
         service="turn_off",
         blocking=True,
@@ -168,7 +168,7 @@ async def test_service_power_on(hass: HomeAssistant, mock_api_client: Mock):
     await hass.async_block_till_done()
 
     assert hass.services.has_service("media_player", "turn_on")
-    assert await hass.services.async_call(
+    await hass.services.async_call(
         domain="media_player",
         service="turn_on",
         blocking=True,
@@ -191,7 +191,7 @@ async def test_service_mute(hass: HomeAssistant, mock_api_client: Mock):
     await hass.async_block_till_done()
 
     assert hass.services.has_service("media_player", "volume_mute")
-    assert await hass.services.async_call(
+    await hass.services.async_call(
         domain="media_player",
         service="volume_mute",
         blocking=True,
@@ -212,7 +212,7 @@ async def test_service_unmute(hass: HomeAssistant, mock_api_client: Mock):
     await hass.async_block_till_done()
 
     assert hass.services.has_service("media_player", "volume_mute")
-    assert await hass.services.async_call(
+    await hass.services.async_call(
         domain="media_player",
         service="volume_mute",
         blocking=True,
@@ -233,7 +233,7 @@ async def test_service_volume_up(hass: HomeAssistant, mock_api_client: Mock):
     await hass.async_block_till_done()
 
     assert hass.services.has_service("media_player", "volume_up")
-    assert await hass.services.async_call(
+    await hass.services.async_call(
         domain="media_player",
         service="volume_up",
         blocking=True,
@@ -254,7 +254,7 @@ async def test_service_volume_down(hass: HomeAssistant, mock_api_client: Mock):
     await hass.async_block_till_done()
 
     assert hass.services.has_service("media_player", "volume_down")
-    assert await hass.services.async_call(
+    await hass.services.async_call(
         domain="media_player",
         service="volume_down",
         blocking=True,
@@ -275,7 +275,7 @@ async def test_service_pause(hass: HomeAssistant, mock_api_client: Mock):
     await hass.async_block_till_done()
 
     assert hass.services.has_service("media_player", "media_pause")
-    assert await hass.services.async_call(
+    await hass.services.async_call(
         domain="media_player",
         service="media_pause",
         blocking=True,
@@ -296,7 +296,7 @@ async def test_service_play(hass: HomeAssistant, mock_api_client: Mock):
     await hass.async_block_till_done()
 
     assert hass.services.has_service("media_player", "media_play")
-    assert await hass.services.async_call(
+    await hass.services.async_call(
         domain="media_player",
         service="media_play",
         blocking=True,
@@ -316,7 +316,7 @@ async def test_service_play(hass: HomeAssistant, mock_api_client: Mock):
 #     await hass.async_block_till_done()
 
 #     assert hass.services.has_service(DOMAIN, "send_text")
-#     assert await hass.services.async_call(
+#     await hass.services.async_call(
 #         domain=DOMAIN,
 #         service="send_text",
 #         blocking=True,
