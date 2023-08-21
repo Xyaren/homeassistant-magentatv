@@ -19,7 +19,7 @@ jobs:
         - name: "Set up Python"
           uses: actions/setup-python@v4.7.0
           with:
-            python-version: "3.10"
+            python-version: "3.11"
             cache: "pip"
 
         - name: "Install requirements"
@@ -53,7 +53,7 @@ jobs:
       - name: "Set up Python"
         uses: actions/setup-python@v4.7.0
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       - name: Install coverage.py
         run: pip install coverage
 
@@ -87,7 +87,7 @@ jobs:
       - name: "Set up Python"
         uses: actions/setup-python@v4.7.0
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       - name: Install coverage.py
         run: pip install coverage
 
