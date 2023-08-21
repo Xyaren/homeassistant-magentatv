@@ -38,7 +38,7 @@ def key_code(value: Any) -> KeyCode:
         raise vol.Invalid("value is None")
 
     # This is expected to be the most common case, so check it first.
-    if type(value) is str:  # pylint: disable=unidiomatic-typecheck
+    if isinstance(value, str):
         return KeyCode[value]
 
     elif isinstance(value, KeyCode):
