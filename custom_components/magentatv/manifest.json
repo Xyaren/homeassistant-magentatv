@@ -18,7 +18,7 @@
   ],
   "requirements": [
     "pydantic==1.10.8",
-    "async-upnp-client==0.33.2"
+    "async-upnp-client==0.34.1"
   ],
   "ssdp": [
     {
