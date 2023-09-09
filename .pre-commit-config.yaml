@@ -6,8 +6,18 @@ repos:
       - id: update-services-yaml
         stages: [commit]
         types: [python]
-        name: update-services-yaml
+        name: Update services.yaml
         entry: python ./update-services-yaml.py
+        language: system
+        pass_filenames: false
+        always_run: true
+  - repo: local
+    hooks:
+      - id: update-requirements
+        stages: [commit]
+        types: [python]
+        name: Update References to Requirements
+        entry: python ./update-requirements.py
         language: system
         pass_filenames: false
         always_run: true

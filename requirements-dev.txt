@@ -5,3 +5,4 @@ ruff==0.0.287
 colorlog==6.7.0
 ruamel.yaml==0.17.32
 aiohttp_cors==0.7.0
+requirements-parser==0.5.0

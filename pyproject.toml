@@ -46,7 +46,7 @@ ignore = [
     "N818",
 ]
 
-exclude = []
+exclude = [".git", ".vscode", "./update-requirements.py"]
 
 # Allow lines to be as long as 120 characters.
 line-length = 120
