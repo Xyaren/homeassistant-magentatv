@@ -17,8 +17,10 @@ repos:
         stages: [commit]
         types: [python]
         name: Update References to Requirements
-        entry: python ./update-requirements.py
-        language: system
+        entry: ./update-requirements.py
+        language: python
+        additional_dependencies:
+          - "requirements-parser==0.5.0"
         pass_filenames: false
         always_run: true
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -47,3 +49,10 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+ci:
+  skip:
+    - update-services-yaml
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit.com hooks
+    for more information, see https://pre-commit.ci
+    [dependabot skip]
