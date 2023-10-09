@@ -4,5 +4,5 @@ pip>=21.0,<23.3
 ruff==0.0.292
 colorlog==6.7.0
 aiohttp_cors==0.7.0
-ruamel.yaml==0.17.33
+ruamel.yaml==0.17.35
 #requirements-parser==0.5.0
