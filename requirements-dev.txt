@@ -1,7 +1,7 @@
 -r ./requirements.txt
 pytest_homeassistant_custom_component~=0.13.57
 pip>=21.0,<23.3
-ruff==0.0.292
+ruff==0.1.0
 colorlog==6.7.0
 aiohttp_cors==0.7.0
 ruamel.yaml==0.17.35
