@@ -100,7 +100,7 @@ jobs:
 
       - run: coverage xml
       - name: Pytest coverage comment
-        uses: MishaKav/pytest-coverage-comment@v1.1.48
+        uses: MishaKav/pytest-coverage-comment@v1.1.49
         with:
           pytest-xml-coverage-path: ./coverage.xml
           junitxml-path: ./pytest.xml
