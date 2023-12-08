@@ -7,7 +7,7 @@ logger:
   logs:
     custom_components.magentatv: debug
     #async_upnp_client.traffic.upnp: debug
-#    async_upnp_client: debug
+    #async_upnp_client: debug
 debugpy:
 #ssdp:
 

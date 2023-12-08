@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 from xml.sax.saxutils import escape
 
 from async_upnp_client.aiohttp import AiohttpRequester
-from async_upnp_client.exceptions import UpnpCommunicationError, UpnpConnectionTimeoutError
+from async_upnp_client.exceptions import UpnpCommunicationError, UpnpConnectionError, UpnpConnectionTimeoutError
 
 from .const import LOGGER, KeyCode
 from .exceptions import (
@@ -104,11 +104,14 @@ class Client:
 
                 await self._async_verify_pairing()
                 LOGGER.info("Pairing Verified. Success !")
-            except (asyncio.CancelledError, asyncio.TimeoutError) as ex:
-                # pairing was not successfull, reset the client to start fresh
+            except UpnpConnectionError as ex:
                 await self.async_close()
-
-                LOGGER.warning("Pairing Timed out", exc_info=ex)
+                LOGGER.debug("Could not connect", exc_info=ex)
+                raise CommunicationException("No connection could be made to the receiver") from None
+            except (asyncio.CancelledError, asyncio.TimeoutError) as ex:
+                await self.async_close()
+                # pairing was not successfull, reset the client to start fresh
+                LOGGER.debug("Pairing Timed out", exc_info=ex)
                 if attempts > PAIRING_ATTEMPTS:
                     raise PairingTimeoutException(
                         f"No pairingCode received from the receiver within {attempts} attempts waiting {PAIRING_EVENT_TIMEOUT} each"
