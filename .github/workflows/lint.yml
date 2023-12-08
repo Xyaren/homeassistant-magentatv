@@ -26,4 +26,4 @@ jobs:
           run: pip install -r requirements-dev.txt
 
         - name: "Lint"
-          run: ruff --format=github .
+          run: ruff --output-format=github .
