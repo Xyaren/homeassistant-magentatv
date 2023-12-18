@@ -28,12 +28,12 @@ jobs:
         - name: "Test"
           run: pytest tests --doctest-modules --junitxml=pytest.xml --cov --cov=custom_components/ --cov-report=term-missing
 
-        - uses: actions/upload-artifact@v3
+        - uses: actions/upload-artifact@v4
           with:
             name: .coverage
             path: .coverage
             retention-days: 1
-        - uses: actions/upload-artifact@v3
+        - uses: actions/upload-artifact@v4
           with:
             name: pytest.xml
             path: pytest.xml
