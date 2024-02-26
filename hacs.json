@@ -1,6 +1,6 @@
 {
   "name": "MagentaTV",
-  "homeassistant": "2024.2.2",
+  "homeassistant": "2024.2.4",
   "render_readme": true,
   "country": "DE"
 }
