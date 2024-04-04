@@ -1,6 +1,6 @@
 {
   "name": "xyaren/homeassistant-magentatv",
-  "image": "mcr.microsoft.com/vscode/devcontainers/python:0-3.11-bullseye",
+  "image": "devcontainers/python:3.12",
   "postCreateCommand": "scripts/setup",
   "runArgs": [
     "--network=host"
