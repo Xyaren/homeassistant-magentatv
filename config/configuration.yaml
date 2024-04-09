@@ -1,6 +1,9 @@
 # https://www.home-assistant.io/integrations/default_config/
 default_config:
 
+http:
+  server_port: 8124 # for running next to a production instace
+
 # https://www.home-assistant.io/integrations/logger/
 logger:
   default: info

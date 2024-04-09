@@ -1,4 +1,5 @@
 """Support for Denon AVR receivers using their HTTP interface."""
+
 from __future__ import annotations
 
 import json
@@ -48,7 +49,7 @@ SCAN_INTERVAL = timedelta(seconds=10)  # only backup in case events have been mi
 PARALLEL_UPDATES = 0
 
 STATE_MAP: Mapping[State, MediaPlayerState] = {
-    None: None,
+    None: MediaPlayerState.OFF,
     State.OFF: MediaPlayerState.OFF,
     State.PLAYING: MediaPlayerState.PLAYING,
     State.PAUSED: MediaPlayerState.PAUSED,
@@ -220,12 +221,8 @@ class MediaReceiver(MediaPlayerEntity):
         if self.state in [MediaPlayerState.OFF]:
             features = features | MediaPlayerEntityFeature.TURN_ON
         else:
-            features = (
-                features
-                | MediaPlayerEntityFeature.TURN_OFF
-                | MediaPlayerEntityFeature.VOLUME_STEP
-                | MediaPlayerEntityFeature.VOLUME_MUTE
-            )
+            features = features | MediaPlayerEntityFeature.TURN_OFF | MediaPlayerEntityFeature.VOLUME_STEP
+            features = features | MediaPlayerEntityFeature.NEXT_TRACK | MediaPlayerEntityFeature.PREVIOUS_TRACK
 
             if self.state in [MediaPlayerState.PAUSED]:
                 features = features | MediaPlayerEntityFeature.PLAY
@@ -256,18 +253,6 @@ class MediaReceiver(MediaPlayerEntity):
         """Turn the media player off."""
         await self._client.async_send_key(KeyCode.OFF)
 
-    async def async_mute_volume(self, mute: bool) -> None:
-        """Mute the volume."""
-
-        # reset mute: colume keys always unmute
-        await self._client.async_send_key(KeyCode.VOL_DOWN)
-        await self._client.async_send_key(KeyCode.VOL_UP)
-
-        # player is now unmuted, now set the desired state
-
-        if mute:
-            await self._client.async_send_key(KeyCode.MUTE)
-
     async def async_volume_up(self) -> None:
         await self._client.async_send_key(KeyCode.VOL_UP)
 
@@ -281,6 +266,12 @@ class MediaReceiver(MediaPlayerEntity):
     async def async_media_play(self) -> None:
         if self.state not in [MediaPlayerState.PLAYING, MediaPlayerState.BUFFERING]:
             await self._client.async_send_key(KeyCode.PLAY)
+
+    async def async_media_next_track(self) -> None:
+        await self._client.async_send_key(KeyCode.CHANNEL_UP)
+
+    async def async_media_previous_track(self) -> None:
+        await self._client.async_send_key(KeyCode.CHANNEL_DOWN)
 
     async def send_key(self, key_code: KeyCode) -> None:
         await self._client.async_send_key(key_code)

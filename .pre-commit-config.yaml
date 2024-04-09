@@ -21,6 +21,7 @@ repos:
         language: python
         additional_dependencies:
           - "requirements-parser==0.5.0"
+          - "setuptools==69.2.0"
         pass_filenames: false
         always_run: true
   - repo: https://github.com/pre-commit/pre-commit-hooks
