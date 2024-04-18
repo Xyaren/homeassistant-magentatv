@@ -1,6 +1,9 @@
 """Test sensor for simple integration."""
+
+import datetime
 from unittest.mock import AsyncMock, Mock, call
 
+from freezegun import freeze_time
 from homeassistant.components.media_player import (
     MediaPlayerEntityFeature,
     MediaType,
@@ -58,6 +61,7 @@ MOCK_POLL_RESPONSE_PAUSE = {
 }
 
 
+@freeze_time("2012-01-01")
 async def test_entity_loads_data(hass, mock_api_client):
     """Test sensor."""
 
@@ -84,11 +88,13 @@ async def test_entity_loads_data(hass, mock_api_client):
         "media_duration": 15,
         "media_position": 15,
         "media_channel": 5,
+        "media_position_updated_at": datetime.datetime(2012, 1, 1),
         "device_class": "receiver",
         "friendly_name": "Livingroom TV Receiver",
         "supported_features": 0
         | MediaPlayerEntityFeature.PAUSE
-        | MediaPlayerEntityFeature.VOLUME_MUTE
+        | MediaPlayerEntityFeature.NEXT_TRACK
+        | MediaPlayerEntityFeature.PREVIOUS_TRACK
         | MediaPlayerEntityFeature.TURN_OFF
         | MediaPlayerEntityFeature.VOLUME_STEP,
     }
@@ -181,48 +187,6 @@ async def test_service_power_on(hass: HomeAssistant, mock_api_client: Mock):
     send_key_method.assert_awaited_once_with(KeyCode.ON)
 
 
-async def test_service_mute(hass: HomeAssistant, mock_api_client: Mock):
-    """Test sending a key to the receiver. Test checks if the client is called"""
-    mock_api_client.is_paired.return_value = True
-    mock_api_client.async_get_player_state.return_value = MOCK_POLL_RESPONSE
-
-    MOCK_CONFIG_ENTRY.add_to_hass(hass)
-    await hass.config_entries.async_setup(MOCK_CONFIG_ENTRY.entry_id)
-    await hass.async_block_till_done()
-
-    assert hass.services.has_service("media_player", "volume_mute")
-    await hass.services.async_call(
-        domain="media_player",
-        service="volume_mute",
-        blocking=True,
-        service_data={"entity_id": "media_player.livingroom_tv_receiver", "is_volume_muted": True},
-    )
-
-    send_key_method: AsyncMock = mock_api_client.async_send_key
-    send_key_method.assert_has_awaits([call(KeyCode.VOL_DOWN), call(KeyCode.VOL_UP), call(KeyCode.MUTE)])
-
-
-async def test_service_unmute(hass: HomeAssistant, mock_api_client: Mock):
-    """Test sending a key to the receiver. Test checks if the client is called"""
-    mock_api_client.is_paired.return_value = True
-    mock_api_client.async_get_player_state.return_value = MOCK_POLL_RESPONSE
-
-    MOCK_CONFIG_ENTRY.add_to_hass(hass)
-    await hass.config_entries.async_setup(MOCK_CONFIG_ENTRY.entry_id)
-    await hass.async_block_till_done()
-
-    assert hass.services.has_service("media_player", "volume_mute")
-    await hass.services.async_call(
-        domain="media_player",
-        service="volume_mute",
-        blocking=True,
-        service_data={"entity_id": "media_player.livingroom_tv_receiver", "is_volume_muted": False},
-    )
-
-    send_key_method: AsyncMock = mock_api_client.async_send_key
-    send_key_method.assert_has_awaits([call(KeyCode.VOL_DOWN), call(KeyCode.VOL_UP)])
-
-
 async def test_service_volume_up(hass: HomeAssistant, mock_api_client: Mock):
     """Test sending a key to the receiver. Test checks if the client is called"""
     mock_api_client.is_paired.return_value = True
@@ -263,6 +227,48 @@ async def test_service_volume_down(hass: HomeAssistant, mock_api_client: Mock):
 
     send_key_method: AsyncMock = mock_api_client.async_send_key
     send_key_method.assert_has_awaits([call(KeyCode.VOL_DOWN)])
+
+
+async def test_service_channel_up(hass: HomeAssistant, mock_api_client: Mock):
+    """Test sending a key to the receiver. Test checks if the client is called"""
+    mock_api_client.is_paired.return_value = True
+    mock_api_client.async_get_player_state.return_value = MOCK_POLL_RESPONSE
+
+    MOCK_CONFIG_ENTRY.add_to_hass(hass)
+    await hass.config_entries.async_setup(MOCK_CONFIG_ENTRY.entry_id)
+    await hass.async_block_till_done()
+
+    assert hass.services.has_service("media_player", "media_next_track")
+    await hass.services.async_call(
+        domain="media_player",
+        service="media_next_track",
+        blocking=True,
+        service_data={"entity_id": "media_player.livingroom_tv_receiver"},
+    )
+
+    send_key_method: AsyncMock = mock_api_client.async_send_key
+    send_key_method.assert_has_awaits([call(KeyCode.CHANNEL_UP)])
+
+
+async def test_service_channel_down(hass: HomeAssistant, mock_api_client: Mock):
+    """Test sending a key to the receiver. Test checks if the client is called"""
+    mock_api_client.is_paired.return_value = True
+    mock_api_client.async_get_player_state.return_value = MOCK_POLL_RESPONSE
+
+    MOCK_CONFIG_ENTRY.add_to_hass(hass)
+    await hass.config_entries.async_setup(MOCK_CONFIG_ENTRY.entry_id)
+    await hass.async_block_till_done()
+
+    assert hass.services.has_service("media_player", "media_previous_track")
+    await hass.services.async_call(
+        domain="media_player",
+        service="media_previous_track",
+        blocking=True,
+        service_data={"entity_id": "media_player.livingroom_tv_receiver"},
+    )
+
+    send_key_method: AsyncMock = mock_api_client.async_send_key
+    send_key_method.assert_has_awaits([call(KeyCode.CHANNEL_DOWN)])
 
 
 async def test_service_pause(hass: HomeAssistant, mock_api_client: Mock):

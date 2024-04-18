@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 from collections.abc import Mapping
 from datetime import timedelta
@@ -239,6 +240,14 @@ class MediaReceiver(MediaPlayerEntity):
     @property
     def media_position(self) -> int | None:
         return self._state_machine.position
+
+    @property
+    def media_position_updated_at(self) -> dt.datetime | None:
+        """When was the position of the current playing media valid.
+
+        Returns value from homeassistant.util.dt.utcnow().
+        """
+        return self._state_machine.position_last_update
 
     @property
     def media_content_type(self) -> MediaType | str | None:

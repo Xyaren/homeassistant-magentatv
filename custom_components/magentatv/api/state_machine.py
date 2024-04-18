@@ -1,3 +1,4 @@
+import datetime as dt
 from enum import Enum
 from logging import Logger, getLogger
 
@@ -19,6 +20,7 @@ class MediaReceiverStateMachine:
     state: State | None = None
     duration: int | None = None
     position: int | None = None
+    position_last_update: dt.datetime | None
     chan_key: int | None = None
 
     program_current: ProgramInfo | None = None
@@ -74,6 +76,7 @@ class MediaReceiverStateMachine:
                 self.state = State.BUFFERING
                 self.duration = None
                 self.position = None
+                self.position_last_update = None
 
                 # poll api is always lagging behind. To prevent switching back and forth we ignore the next event and wait for a change
                 self._ignore_next_poll_event = True
@@ -83,6 +86,7 @@ class MediaReceiverStateMachine:
                 self.state = State.PLAYING
                 self.duration = 0
                 self.position = 0
+                self.position_last_update = dt.datetime.now()
                 # poll api is always lagging behind. To prevent switching back and forth we ignore the next event and wait for a change
                 self._ignore_next_poll_event = True
                 return
@@ -92,12 +96,14 @@ class MediaReceiverStateMachine:
                 self.state = State.PLAYING
                 self.duration = data["duration"]
                 self.position = data["playPostion"]
+                self.position_last_update = dt.datetime.now()
                 return
 
             elif data["new_play_mode"] == 1:
                 self.state = State.PAUSED
                 self.duration = data["duration"]
                 self.position = data["playPostion"]
+                self.position_last_update = dt.datetime.now()
                 return
 
             elif data["new_play_mode"] == 0:
@@ -143,6 +149,7 @@ class MediaReceiverStateMachine:
             self.chan_key = int(data["chanKey"])
             self.duration = int(data["duration"])
             self.position = int(data["playPostion"])
+            self.position_last_update = dt.datetime.now()
             return
 
         if {
@@ -164,6 +171,7 @@ class MediaReceiverStateMachine:
         self.chan_key = None
         self.duration = None
         self.position = None
+        self.position_last_update = None
 
         self.program_current = None
         self.program_next = None
