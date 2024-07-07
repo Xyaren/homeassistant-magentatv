@@ -144,8 +144,8 @@ class NotifyServer:
                 },
                 body=None,
         ))
-        assert response[0] == 200
-        sid = response[1]["SID"]
+        assert response.status_code == 200
+        sid = response.headers["SID"]
         LOGGER.debug("Subscribed %s on %s at %s", sid, service, target)
         return sid
 
@@ -162,8 +162,8 @@ class NotifyServer:
                 body=None,
             )
         )
-        assert response[0] == 200
-        return response[1]["SID"]
+        assert response.status_code == 200
+        return response.headers["SID"]
 
     @wrap_exceptions
     async def _async_unsubscribe(self, target, service, sid) -> str:
@@ -177,7 +177,7 @@ class NotifyServer:
                 body=None,
             )
         )
-        assert response[0] in [200, 412]
+        assert response.status_code in [200, 412]
         LOGGER.debug("Unsubscribed %s on %s at %s", sid, service, target)
 
     async def _async_has_subscriptions(self) -> bool:

@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 from xml.sax.saxutils import escape
 
 from async_upnp_client.aiohttp import AiohttpRequester
-from async_upnp_client.const import HttpRequest
+from async_upnp_client.const import HttpRequest,HttpResponse
 from async_upnp_client.exceptions import UpnpCommunicationError, UpnpConnectionError, UpnpConnectionTimeoutError
 
 from .const import LOGGER, KeyCode
@@ -138,8 +138,8 @@ class Client:
                 "verificationCode": self._verification_code,
             },
         )
-        assert response[0] == 200
-        tree = Et.fromstring(text=response[2])
+        assert response.status_code == 200
+        tree = Et.fromstring(text=response.body)
         result = {}
         for child in tree[0][0]:
             result[child.tag] = child.text
@@ -155,7 +155,7 @@ class Client:
                 "userID": self._user_id,
             },
         )
-        assert response[0] == 200
+        assert response.status_code == 200
 
     async def _async_verify_pairing(self):
         self.assert_paired()
@@ -169,12 +169,12 @@ class Client:
             },
         )
 
-        assert response[0] == 200
-        assert "<pairingResult>0</pairingResult>" in response[2]
+        assert response.status_code == 200
+        assert "<pairingResult>0</pairingResult>" in response.body
 
     async def _async_send_upnp_soap(
         self, service: str, action: str, attributes: Mapping[str, str]
-    ) -> tuple[int, Mapping, str]:
+    ) -> HttpResponse:
         try:
             attributes = "".join([f"   <{k}>{escape(v)}</{k}>\n" for k, v in attributes.items()])
             full_body = (
@@ -229,14 +229,14 @@ class Client:
                 "CurrentURIMetaData": "",
             },
         )
-        LOGGER.debug("%s: %s", "Set URI", response[2])
+        LOGGER.debug("%s: %s", "Set URI", response.body)
 
         response = await self._async_send_upnp_soap(
             "AVTransport",
             "Play",
             {"InstanceID": "0", "Speed": "1"},
         )
-        LOGGER.debug("%s: %s", "Play", response[2])
+        LOGGER.debug("%s: %s", "Play", response.body)
 
     async def async_send_key(self, key: KeyCode):
         self.assert_paired()
@@ -249,7 +249,7 @@ class Client:
             },
         )
         LOGGER.info("%s - %s: %s", "RemoteKey", key, response)
-        assert response[0] == 200
+        assert response.status_code== 200
 
     async def async_send_character_input(self, character_input: str):
         self.assert_paired()
@@ -262,5 +262,5 @@ class Client:
                 "KeyCode": f"characterInput={character_input}^{self._terminal_id}:{self._verification_code}^userID:{self._user_id}",
             },
         )
-        LOGGER.info("%s - '%s': %s", "Send Character Input", character_input, response[2])
-        assert response[0] == 200
+        LOGGER.info("%s - '%s': %s", "Send Character Input", character_input, response.body)
+        assert response.status_code == 200
