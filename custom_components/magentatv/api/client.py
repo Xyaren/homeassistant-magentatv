@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 from xml.sax.saxutils import escape
 
 from async_upnp_client.aiohttp import AiohttpRequester
+from async_upnp_client.const import HttpRequest
 from async_upnp_client.exceptions import UpnpCommunicationError, UpnpConnectionError, UpnpConnectionTimeoutError
 
 from .const import LOGGER, KeyCode
@@ -187,14 +188,16 @@ class Client:
                 "</s:Envelope>"
             )
             return await self._requester.async_http_request(
-                method="POST",
-                url=f"{self._url}/upnp/service/{service}/Control",
-                headers={
-                    "SOAPACTION": f"urn:schemas-upnp-org:service:{service}:1#{action}",
-                    "HOST": f"{self._host}:{self._port}",
-                    "Content-Type": 'text/xml; charset="utf-8"',
-                },
-                body=full_body,
+                http_request=HttpRequest(
+                    method="POST",
+                    url=f"{self._url}/upnp/service/{service}/Control",
+                    headers={
+                        "SOAPACTION": f"urn:schemas-upnp-org:service:{service}:1#{action}",
+                        "HOST": f"{self._host}:{self._port}",
+                        "Content-Type": 'text/xml; charset="utf-8"',
+                    },
+                    body=full_body,
+                )
             )
         except UpnpConnectionTimeoutError as ex:
             raise CommunicationTimeoutException() from ex
