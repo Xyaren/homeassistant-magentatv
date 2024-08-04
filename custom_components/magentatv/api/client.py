@@ -1,4 +1,5 @@
 """Sample API Client."""
+
 from __future__ import annotations
 
 import asyncio
@@ -94,6 +95,7 @@ class Client:
         attempts = 0
         while not self._pairing_event.is_set():
             attempts += 1
+            LOGGER.debug("Attempt %s", attempts)
             try:
                 await self._register_for_events()
 
@@ -108,15 +110,16 @@ class Client:
             except UpnpConnectionError as ex:
                 await self.async_close()
                 LOGGER.debug("Could not connect", exc_info=ex)
-                raise CommunicationException("No connection could be made to the receiver") from None
-            except (asyncio.CancelledError, asyncio.TimeoutError) as ex:
+                raise CommunicationException("No connection could be made to the receiver") from ex
+            except (asyncio.TimeoutError, PairingTimeoutException) as ex:
                 await self.async_close()
                 # pairing was not successfull, reset the client to start fresh
                 LOGGER.debug("Pairing Timed out", exc_info=ex)
                 if attempts > PAIRING_ATTEMPTS:
+                    LOGGER.warning("Repeated failure")
                     raise PairingTimeoutException(
                         f"No pairingCode received from the receiver within {attempts} attempts waiting {PAIRING_EVENT_TIMEOUT} each"
-                    ) from None
+                    ) from ex
 
         self.assert_paired()
         return self._verification_code
@@ -172,9 +175,7 @@ class Client:
         assert response.status_code == 200
         assert "<pairingResult>0</pairingResult>" in response.body
 
-    async def _async_send_upnp_soap(
-        self, service: str, action: str, attributes: Mapping[str, str]
-    ) -> HttpResponse:
+    async def _async_send_upnp_soap(self, service: str, action: str, attributes: Mapping[str, str]) -> HttpResponse:
         try:
             attributes = "".join([f"   <{k}>{escape(v)}</{k}>\n" for k, v in attributes.items()])
             full_body = (
@@ -249,7 +250,7 @@ class Client:
             },
         )
         LOGGER.info("%s - %s: %s", "RemoteKey", key, response)
-        assert response.status_code== 200
+        assert response.status_code == 200
 
     async def async_send_character_input(self, character_input: str):
         self.assert_paired()

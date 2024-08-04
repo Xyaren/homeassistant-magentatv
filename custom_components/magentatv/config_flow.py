@@ -1,4 +1,5 @@
 """Adds config flow for Blueprint."""
+
 from __future__ import annotations
 
 import asyncio
@@ -27,6 +28,7 @@ from homeassistant.helpers import instance_id
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from custom_components.magentatv import async_get_notification_server
+from custom_components.magentatv.api.exceptions import PairingTimeoutException
 
 from .api import Client
 from .const import CONF_USER_ID, DATA_USER_ID, DOMAIN, LOGGER
@@ -82,7 +84,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self.verification_code: str | None = None
 
         self.user_id: str | None = None
-        self.task_pair = None
+        self.task_pair: asyncio.Task[None] | None = None
 
         self.verification_code = None
         self.last_error = None
@@ -290,21 +292,18 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
             self.verification_code = await client.async_pair()
             # A task that take some time to complete.
-        except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
-            self.last_error = "timeout"
+            LOGGER.debug("pair finished")
+        except PairingTimeoutException as err:
+            LOGGER.debug("Timeout during pairing task", exc_info=err)
+            self.last_error = "pairing_timeout"
+            return
         except Exception as err:
-            LOGGER.error("Error during pairing", exc_info=err)
+            LOGGER.debug("Error during pairing task", exc_info=err)
             self.last_error = "unknown"
+            return
         finally:
             if client is not None:
                 await client.async_close()
-                # await _notify_server.async_stop()
-
-            # Continue the flow after show progress when the task is done.
-            # To avoid a potential deadlock we create a new task that continues the flow.
-            # The task must be completely done so the flow can await the task
-            # if needed and get the task result.
-            self.hass.async_create_task(self.hass.config_entries.flow.async_configure(flow_id=self.flow_id))
 
     async def async_step_finish(self, user_input=None):
         return self.async_create_entry(
@@ -322,43 +321,51 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             },
         )
 
-    async def async_step_pairing_failed(self, user_input=None) -> FlowResult:
-        return self.async_abort(reason="pairing_timeout")
-
     async def async_step_pair(self, user_input=None) -> FlowResult:
-        if self.last_error is not None:
-            return self.async_show_progress_done(next_step_id="pairing_failed")
+        LOGGER.debug("Task Pair - Create new task")
 
-        if not self.verification_code:
-            # start async pairing process
-            if not self.task_pair:
-                self.task_pair = self.hass.async_create_task(self._async_task_pair())
-
-                # TODO: Finish form (title,labels etc)
-            return self.async_show_progress(
-                step_id="pair",
-                progress_action="wait_for_pairing",
-                description_placeholders={"name": self.friendly_name},
-            )
-        else:
-            # verification code is present -> pairing done
+        if self.verification_code:
             return self.async_show_progress_done(next_step_id="finish")
+
+        # if there are errirs during paring, direct the user towards the user-id input dialog to fix possible bad inputs.
+        if self.last_error:
+            return self.async_show_progress_done(next_step_id="enter_user_id")
+
+        # start async pairing process
+        if not self.task_pair:
+            LOGGER.debug("Task Pair - Create new task")
+            self.task_pair = self.hass.async_create_task(self._async_task_pair())
+
+        # the current step will be called when the tasks finises / aborts
+        return self.async_show_progress(
+            progress_task=self.task_pair,
+            progress_action="wait_for_pairing",
+            step_id="pair",
+            description_placeholders={"name": self.friendly_name},
+        )
 
     async def async_step_enter_user_id(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Allow the user to enter his user id adding the device."""
 
         self._abort_if_unique_id_configured()
         self.hass.data.setdefault(DOMAIN, {})
+        self.context["title_placeholders"] = {"name": self.friendly_name}
 
         _errors = {}
 
         if self.last_error is None and user_input is not None:
+            LOGGER.debug("step_enter_user_id Received: %s", user_input)
+
             self.user_id = user_input[CONF_USER_ID]
 
             self.hass.data[DOMAIN][CONF_USER_ID] = self.user_id
+
+            self.task_pair = None
             return await self.async_step_pair()
 
         if self.last_error:
+            LOGGER.debug("step_enter_user_id Last Error: %s", user_input)
+
             _errors["base"] = self.last_error
             self.last_error = None
 
@@ -370,6 +377,8 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         )
         if prefilled_user_id is not None:
             prefilled_user_id = str(prefilled_user_id)
+
+        LOGGER.debug("step_enter_user_id Showing Form %s", user_input)
 
         return self.async_show_form(
             step_id="enter_user_id",

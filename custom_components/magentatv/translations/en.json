@@ -30,8 +30,9 @@
     "progress": {
       "wait_for_pairing": "Please wait while the integrations attempts pairing with the receiver: {name}"
     },
-    "abort": {
-      "pairing_timeout": "Pairing timeout.\nPairing took too long."
+    "error": {
+      "pairing_timeout": "Pairing timeout. Please check your inputs and try again.",
+      "unknown": "An unknown error occured during pairing."
     }
   }
 }
