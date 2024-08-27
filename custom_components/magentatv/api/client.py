@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-import xml.etree.ElementTree as Et
+import xml.etree.ElementTree as ET
 from collections.abc import Mapping
 from urllib.parse import urlencode
 from xml.sax.saxutils import escape
@@ -142,7 +142,7 @@ class Client:
             },
         )
         assert response.status_code == 200
-        tree = Et.fromstring(text=response.body)
+        tree = ET.fromstring(text=response.body)
         result = {}
         for child in tree[0][0]:
             result[child.tag] = child.text
