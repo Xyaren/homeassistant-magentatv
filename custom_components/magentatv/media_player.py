@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import datetime as dt
-import json
 from collections.abc import Mapping
 from datetime import timedelta
 
@@ -29,8 +28,10 @@ from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers import entity_platform, instance_id
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from pydantic import TypeAdapter
 
 from custom_components.magentatv import async_get_notification_server
+from custom_components.magentatv.api.event_model import EitChangedEvent, PlayContentEvent
 from custom_components.magentatv.api.exceptions import (
     CommunicationException,
     CommunicationTimeoutException,
@@ -152,9 +153,13 @@ class MediaReceiver(MediaPlayerEntity):
     async def _async_on_event(self, changes):
         LOGGER.debug("%s: Event %s", self.entity_id, changes)
         if "STB_playContent" in changes:
-            self._state_machine.on_event_play_content(json.loads(changes["STB_playContent"]))
+            ta = TypeAdapter(PlayContentEvent)
+            parsed = ta.validate_json(changes["STB_playContent"])
+            self._state_machine.on_event_play_content(parsed)
         elif "STB_EitChanged" in changes:
-            self._state_machine.on_event_eit_changed(json.loads(changes["STB_EitChanged"]))
+            ta = TypeAdapter(EitChangedEvent)
+            parsed = ta.validate_json(changes["STB_EitChanged"])
+            self._state_machine.on_event_eit_changed(parsed)
         elif "messageBody" in changes and "X-pairingCheck" in changes["messageBody"]:
             return  # ignore event
         else:
@@ -183,7 +188,10 @@ class MediaReceiver(MediaPlayerEntity):
             if not self._client.is_paired():
                 await self._client.async_pair()
 
-            self._state_machine.on_poll_player_state(await self._client.async_get_player_state())
+            result = await self._client.async_get_player_state()
+            ta = TypeAdapter(PlayContentEvent)
+            parsed = ta.validate_python(result)
+            self._state_machine.on_poll_player_state(parsed)
         except (PairingTimeoutException, CommunicationTimeoutException, CommunicationException):
             self._state_machine.on_connection_error()
             # raise ex

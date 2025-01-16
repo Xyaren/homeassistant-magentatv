@@ -2,7 +2,7 @@ import datetime as dt
 from enum import Enum
 from logging import Logger, getLogger
 
-from .event_model import ProgramInfo
+from .event_model import EitChangedEvent, PlayContentEvent, ProgramInfo
 
 LOGGER: Logger = getLogger(__package__ + ".state_machine")
 
@@ -26,7 +26,7 @@ class MediaReceiverStateMachine:
     program_current: ProgramInfo | None = None
     program_next: ProgramInfo | None = None
 
-    _last_poll_player_state = None
+    _last_poll_player_state: PlayContentEvent | None = None
     _last_event_play_content = None
     _last_event_eit_changed = None
 
@@ -37,7 +37,7 @@ class MediaReceiverStateMachine:
     def on_connection_error(self) -> None:
         self._available = False
 
-    def on_event_eit_changed(self, data: dict) -> None:
+    def on_event_eit_changed(self, data: EitChangedEvent) -> None:
         LOGGER.debug("On Event EitChanged: %s", data)
         self._available = True
 
@@ -49,16 +49,15 @@ class MediaReceiverStateMachine:
 
         self._last_event_eit_changed = data
 
-    def _on_event_eit_changed_changed(self, data) -> None:
-        if "channel_num" in data:
-            self.chan_key = int(data["channel_num"])
+    def _on_event_eit_changed_changed(self, data: EitChangedEvent) -> None:
+        if "channel_num" in data.set_keys():
+            self.chan_key = data.channel_num
 
-        if "program_info" in data:
-            programm_info = data["program_info"]
-            self.program_current = ProgramInfo(**programm_info[0])
-            self.program_next = ProgramInfo(**programm_info[1])
+        if "program_info" in data.set_keys():
+            self.program_current = data.program_info[0] or None
+            self.program_next = data.program_info[1] or None
 
-    def on_event_play_content(self, data: dict) -> None:
+    def on_event_play_content(self, data: PlayContentEvent) -> None:
         LOGGER.debug("On Event PlayContent: %s", data)
         self._available = True
 
@@ -70,9 +69,9 @@ class MediaReceiverStateMachine:
 
         self._last_event_play_content = data
 
-    def _on_event_play_content_changed(self, data: dict) -> None:
-        if "new_play_mode" in data:
-            if data["new_play_mode"] == 20:
+    def _on_event_play_content_changed(self, data: PlayContentEvent) -> None:
+        if data.new_play_mode is not None:
+            if data.new_play_mode == 20:
                 self.state = State.BUFFERING
                 self.duration = None
                 self.position = None
@@ -82,7 +81,7 @@ class MediaReceiverStateMachine:
                 self._ignore_next_poll_event = True
                 return
             # [2, 3, 4, 5]
-            elif data["new_play_mode"] == 4:
+            elif data.new_play_mode == 4:
                 self.state = State.PLAYING
                 self.duration = 0
                 self.position = 0
@@ -91,27 +90,27 @@ class MediaReceiverStateMachine:
                 self._ignore_next_poll_event = True
                 return
 
-            elif data["new_play_mode"] == 2:
+            elif data.new_play_mode == 2:
                 # play after pause -> time shift ?
                 self.state = State.PLAYING
-                self.duration = data["duration"]
-                self.position = data["playPostion"]
+                self.duration = data.duration
+                self.position = data.play_position
                 self.position_last_update = dt.datetime.now()
                 return
 
-            elif data["new_play_mode"] == 1:
+            elif data.new_play_mode == 1:
                 self.state = State.PAUSED
-                self.duration = data["duration"]
-                self.position = data["playPostion"]
+                self.duration = data.duration
+                self.position = data.play_position
                 self.position_last_update = dt.datetime.now()
                 return
 
-            elif data["new_play_mode"] == 0:
+            elif data.new_play_mode == 0:
                 self.state = State.OFF
                 self._clear_non_state_attributes()
                 return
 
-    def on_poll_player_state(self, data: dict) -> None:
+    def on_poll_player_state(self, data: PlayContentEvent) -> None:
         LOGGER.debug("On Poll PlayerState: %s", data)
         self._available = True
 
@@ -123,41 +122,43 @@ class MediaReceiverStateMachine:
 
         self._last_poll_player_state = data
 
-    def _on_poll_player_state_changed(self, data: dict) -> None:
+    def _on_poll_player_state_changed(self, data: PlayContentEvent) -> None:
+        data_keys = data.set_keys()
+
         # deep sleep ?
-        if {"playBackState"} == set(data.keys()):
-            if data["playBackState"] == "0":
+        if {"play_back_state"} == set(data_keys):
+            if data.play_back_state == 0:
                 self.state = State.OFF
                 self._clear_non_state_attributes()
             return
 
         # tv running
         if {
-            "chanKey",
+            "chan_key",
             "duration",
-            "mediaCode",
-            "mediaType",
-            "playBackState",
-            "playPostion",
-        } <= data.keys():
-            if "fastSpeed" in data and data["fastSpeed"] == "0":
+            "media_code",
+            "media_type",
+            "play_back_state",
+            "play_position",
+        } <= data_keys:
+            if data.fast_speed == 0:
                 self.state = State.PAUSED
             else:
                 if self.state != State.PLAYING:
                     self.state = State.PLAYING
 
-            self.chan_key = int(data["chanKey"])
-            self.duration = int(data["duration"])
-            self.position = int(data["playPostion"])
+            self.chan_key = data.chan_key
+            self.duration = data.duration
+            self.position = data.play_position
             self.position_last_update = dt.datetime.now()
             return
 
         if {
-            "chanKey",
-            "mediaCode",
-            "mediaType",
-            "playBackState",
-        } == set(data.keys()):
+            "chan_key",
+            "media_code",
+            "media_type",
+            "play_back_state",
+        } == set(data_keys):
             if self._last_poll_player_state is not None:
                 # this is an update and NOT the initial poll
                 if not self._ignore_next_poll_event:
