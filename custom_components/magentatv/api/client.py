@@ -146,6 +146,7 @@ class Client:
         result = {}
         for child in tree[0][0]:
             result[child.tag] = child.text
+
         return result
 
     async def _async_send_pairing_request(self):

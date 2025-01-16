@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class EventModel(BaseModel):
@@ -6,30 +6,21 @@ class EventModel(BaseModel):
     instantiating new objects.
     """
 
-    def __new__(cls, *args, **kwargs):
-        """Be careful when using this method:
-        https://docs.python.org/3/reference/datamodel.html#object.__new__.
-        """
-        # If all args are none -> do nothing
-        if all(v is None for v in args) and all(v is None for v in kwargs.values()):
-            pass
-        else:
-            return super().__new__(cls)
+    model_config = ConfigDict(populate_by_name=False, frozen=True)
 
-    class Config:
-        allow_population_by_field_name = True
-        allow_mutation = False
+    def set_keys(self):
+        return self.model_dump(exclude_unset=True, by_alias=False).keys()
 
 
 class PlayContentEvent(EventModel):
-    new_play_mode: int | None
-    play_back_state: int | None = Field(alias="playBackState")
-    media_type: int | None = Field(alias="mediaType")
-    media_code: str | None = Field(alias="mediaCode")
-    duration: int | None
-    play_position: int | None = Field(alias="playPostion")  # not a typo !
-    fast_speed: int | None = Field(alias="fastSpeed")
-    chan_key: int | None = Field(alias="chanKey")
+    new_play_mode: int | None = None
+    play_back_state: int | None = Field(alias="playBackState", default=None)
+    media_type: int | None = Field(alias="mediaType", default=None)
+    media_code: str | None = Field(alias="mediaCode", default=None)
+    duration: int | None = None
+    play_position: int | None = Field(alias="playPostion", default=None)  # not a typo !
+    fast_speed: int | None = Field(alias="fastSpeed", default=None)
+    chan_key: int | None = Field(alias="chanKey", default=None)
 
 
 class ShortEvent(EventModel):
@@ -50,7 +41,12 @@ class ProgramInfo(EventModel):
 class EitChangedEvent(EventModel):
     type: str
     instance_id: int
-    channel_code: str
-    channel_num: str
+    channel_code: int
+    channel_num: int
     media_id: str = Field(alias="mediaId")
-    program_info: list[ProgramInfo]
+    program_info: list[ProgramInfo | None]
+
+    @field_validator("program_info", mode="before")
+    @classmethod
+    def filter_empty_program_info(cls, value) -> list[ProgramInfo | None]:
+        return [x if x else None for x in value]
