@@ -404,18 +404,6 @@ def test_on_pause_then_play():
     assert sm.position == 1718
 
     sm.on_poll_player_state(
-        {
-            "chanKey": "2",
-            "duration": "1733",
-            "fastSpeed": "0",
-            "mediaCode": "3733",
-            "mediaType": "1",
-            "playBackState": "1",
-            "playPostion": "1718",
-        }
-    )
-
-    sm.on_poll_player_state(
         PlayContentEvent(
             chanKey=2, duration=1733, fastSpeed=0, mediaCode="3733", mediaType=1, playBackState=1, playPostion=1718
         )
