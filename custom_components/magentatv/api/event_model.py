@@ -42,7 +42,7 @@ class EitChangedEvent(EventModel):
     type: str
     instance_id: int
     channel_code: int
-    channel_num: int
+    channel_num: int | None
     media_id: str = Field(alias="mediaId")
     program_info: list[ProgramInfo | None]
 
