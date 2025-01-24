@@ -143,7 +143,8 @@ class NotifyServer:
                     "CALLBACK": f"<http://{adv_host}:{adv_port}/eventSub>",
                 },
                 body=None,
-        ))
+            )
+        )
         assert response.status_code == 200
         sid = response.headers["SID"]
         LOGGER.debug("Subscribed %s on %s at %s", sid, service, target)
@@ -300,13 +301,18 @@ class NotifyServer:
 
         # decode event and send updates to service
         changes = {}
-        stripped_body = body.rstrip(" \t\r\n\0")
-        el_root = Et.fromstring(stripped_body)
-        for el_property in el_root.findall("./event:property", NS):
-            for el_state_var in el_property:
-                name = el_state_var.tag
-                value = el_state_var.text or ""
-                changes[name] = value
+
+        try:
+            stripped_body = body.rstrip(" \t\r\n\0")
+            el_root = Et.fromstring(stripped_body)
+            for el_property in el_root.findall("./event:property", NS):
+                for el_state_var in el_property:
+                    name = el_state_var.tag
+                    value = el_state_var.text or ""
+                    changes[name] = value
+        except Et.ParseError as ex:
+            LOGGER.error("Failed to parse event:\n%s", body, exc_info=ex)
+            raise ex
 
         await self._notify_subscribed_callbacks(headers.get("SID"), changes)
 
