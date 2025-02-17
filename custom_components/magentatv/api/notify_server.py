@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import socket
 from ast import List
 from collections.abc import Awaitable, Callable, Mapping
@@ -40,6 +41,9 @@ def wrap_exceptions(f):
 
 class NotifyServer:
     """Notification server listening for subscribed events and invoking the corresponding callbacks"""
+
+    # https://regex101.com/r/ojU2H9/1
+    _invalid_ampersand_re = re.compile(r"&(?![a-z0-9]+;)")
 
     _listen_ip_port = (tuple[str, int],)
     _advertise_ip_port = tuple[str | None, int | None] | None
@@ -303,7 +307,10 @@ class NotifyServer:
         changes = {}
 
         try:
-            el_root = Et.fromstring(body)
+            # fixed unencoded ampersands in original body - someone did not read the spec - & -> &amp;
+            fixed_body = self._invalid_ampersand_re.sub("&amp;", body)
+
+            el_root = Et.fromstring(fixed_body)
             for el_property in el_root.findall("./event:property", NS):
                 for el_state_var in el_property:
                     name = el_state_var.tag
