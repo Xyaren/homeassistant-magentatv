@@ -2,5 +2,8 @@
   "name": "MagentaTV",
   "homeassistant": "2025.1.4",
   "render_readme": true,
-  "country": "DE"
+  "country": "DE",
+  "zip_release": true,
+  "filename": "magentatv.zip",
+  "hide_default_branch": false
 }
