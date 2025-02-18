@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -39,11 +41,11 @@ class ProgramInfo(EventModel):
 
 
 class EitChangedEvent(EventModel):
-    type: str
-    instance_id: int
-    channel_code: int
-    channel_num: int | None
-    media_id: str = Field(alias="mediaId")
+    type: Literal["EVENT_EIT_CHANGE"]
+    instance_id: int | None = Field(default=None)
+    channel_code: int | None = Field(default=None)
+    channel_num: int | None = Field(default=None)
+    media_id: str | None = Field(alias="mediaId", default=None)
     program_info: list[ProgramInfo | None]
 
     @field_validator("program_info", mode="before")
