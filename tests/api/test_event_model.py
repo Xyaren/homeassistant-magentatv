@@ -121,3 +121,18 @@ def test_eit_change_event_no_channel_num_deserializes():
         ],
     }
     assert True
+
+
+def test_eit_change_event_issue282():
+    data = '{"type":"EVENT_EIT_CHANGE","instance_id":28,"channel_code":"421","mediaId":"4806","program_info":[{},{}]}'
+    ta = TypeAdapter(EitChangedEvent)
+    obj = ta.validate_json(data)
+    assert obj.model_dump() == {
+        "type": "EVENT_EIT_CHANGE",
+        "instance_id": 28,
+        "channel_code": 421,
+        "channel_num": None,
+        "media_id": "4806",
+        "program_info": [None, None],
+    }
+    assert True
