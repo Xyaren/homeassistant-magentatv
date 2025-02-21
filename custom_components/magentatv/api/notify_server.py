@@ -108,7 +108,7 @@ class NotifyServer:
         self._subscription_registry[sid] = (target, service, callback)
 
         for changes in self._buffer.pop(sid, []):
-            callback(changes)
+            await callback(changes)
 
         return sid
 
@@ -136,19 +136,23 @@ class NotifyServer:
         if adv_port is None:
             adv_port = self._listen_ip_port[1]
 
-        response = await self._requester.async_http_request(
-            http_request=HttpRequest(
-                method="SUBSCRIBE",
-                url=url,
-                headers={
-                    "NT": "upnp:event",
-                    "TIMEOUT": f"Second-{self._subscription_timeout}",
-                    "HOST": f"{target[0]}:{target[1]}",
-                    "CALLBACK": f"<http://{adv_host}:{adv_port}/eventSub>",
-                },
-                body=None,
+        try:
+            response = await self._requester.async_http_request(
+                http_request=HttpRequest(
+                    method="SUBSCRIBE",
+                    url=url,
+                    headers={
+                        "NT": "upnp:event",
+                        "TIMEOUT": f"Second-{self._subscription_timeout}",
+                        "HOST": f"{target[0]}:{target[1]}",
+                        "CALLBACK": f"<http://{adv_host}:{adv_port}/eventSub>",
+                    },
+                    body=None,
+                )
             )
-        )
+        except UpnpConnectionTimeoutError as ex:
+            LOGGER.error("Failed to subscribe %s on %s at %s", service, target, url, exc_info=ex)
+            raise ex
         assert response.status_code == 200
         sid = response.headers["SID"]
         LOGGER.debug("Subscribed %s on %s at %s", sid, service, target)
@@ -156,34 +160,41 @@ class NotifyServer:
 
     @wrap_exceptions
     async def _async_resubscribe(self, target, service, sid) -> str:
-        response = await self._requester.async_http_request(
-            http_request=HttpRequest(
-                method="SUBSCRIBE",
-                url=f"http://{target[0]}:{target[1]}/upnp/service/{service}/Event",
-                headers={
-                    "SID": sid,
-                    "TIMEOUT": f"Second-{self._subscription_timeout}",
-                },
-                body=None,
+        try:
+            response = await self._requester.async_http_request(
+                http_request=HttpRequest(
+                    method="SUBSCRIBE",
+                    url=f"http://{target[0]}:{target[1]}/upnp/service/{service}/Event",
+                    headers={
+                        "SID": sid,
+                        "TIMEOUT": f"Second-{self._subscription_timeout}",
+                    },
+                    body=None,
+                )
             )
-        )
-        assert response.status_code == 200
-        return response.headers["SID"]
+            assert response.status_code == 200
+            return response.headers["SID"]
+        except UpnpConnectionTimeoutError as ex:
+            LOGGER.error("Failed to resubscribe %s on %s at %s", sid, service, target, exc_info=ex)
+            raise ex
 
     @wrap_exceptions
     async def _async_unsubscribe(self, target, service, sid) -> str:
-        response = await self._requester.async_http_request(
-            http_request=HttpRequest(
-                method="UNSUBSCRIBE",
-                url=f"http://{target[0]}:{target[1]}/upnp/service/{service}/Event",
-                headers={
-                    "SID": sid,
-                },
-                body=None,
+        try:
+            response = await self._requester.async_http_request(
+                http_request=HttpRequest(
+                    method="UNSUBSCRIBE",
+                    url=f"http://{target[0]}:{target[1]}/upnp/service/{service}/Event",
+                    headers={
+                        "SID": sid,
+                    },
+                    body=None,
+                )
             )
-        )
-        assert response.status_code in [200, 412]
-        LOGGER.debug("Unsubscribed %s on %s at %s", sid, service, target)
+            assert response.status_code in [200, 412]
+            LOGGER.debug("Unsubscribed %s on %s at %s", sid, service, target)
+        except UpnpConnectionTimeoutError as ex:
+            LOGGER.warning("Failed to unsubscribe %s on %s at %s", sid, service, target, exc_info=ex)
 
     async def _async_has_subscriptions(self) -> bool:
         async with self.subscription_lock:

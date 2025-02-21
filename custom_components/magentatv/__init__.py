@@ -3,6 +3,7 @@
 For more details about this integration, please refer to
 https://github.com/xyaren/magentatv
 """
+
 from __future__ import annotations
 
 from asyncio import Lock

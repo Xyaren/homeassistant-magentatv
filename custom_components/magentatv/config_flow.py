@@ -26,6 +26,14 @@ from homeassistant.const import (
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import instance_id
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.service_info.ssdp import (
+    ATTR_UPNP_FRIENDLY_NAME,
+    ATTR_UPNP_MANUFACTURER,
+    ATTR_UPNP_MODEL_NAME,
+    ATTR_UPNP_MODEL_NUMBER,
+    ATTR_UPNP_UDN,
+    SsdpServiceInfo,
+)
 
 from custom_components.magentatv import async_get_notification_server
 from custom_components.magentatv.api.exceptions import PairingTimeoutException
@@ -70,7 +78,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize the flow."""
-        self._discoveries: dict[str, ssdp.SsdpServiceInfo] = {}
+        self._discoveries: dict[str, SsdpServiceInfo] = {}
 
         self.friendly_name: str | None = None
         self.model_name: str | None = None
@@ -111,7 +119,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             return await self.async_step_manual()
 
         self._discoveries = {
-            discovery.upnp.get(ssdp.ATTR_UPNP_FRIENDLY_NAME)
+            discovery.upnp.get(ATTR_UPNP_FRIENDLY_NAME)
             or cast(str, urlparse(discovery.ssdp_location).hostname): discovery
             for discovery in discoveries
         }
@@ -120,7 +128,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(step_id="user", data_schema=data_schema, last_step=False)
 
-    async def _async_get_discoveries(self) -> list[ssdp.SsdpServiceInfo]:
+    async def _async_get_discoveries(self) -> list[SsdpServiceInfo]:
         """Get list of unconfigured DLNA devices discovered by SSDP."""
 
         # Get all compatible devices from ssdp's cache
@@ -206,11 +214,11 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="discovery_error")
 
     def _set_from_upnp(self, device_info: Mapping[str, Any]):
-        self._udn = device_info.get(ssdp.ATTR_UPNP_UDN)
-        self.friendly_name = device_info.get(ssdp.ATTR_UPNP_FRIENDLY_NAME)
-        self.model_name = device_info.get(ssdp.ATTR_UPNP_MODEL_NAME)
-        self.model_number = device_info.get(ssdp.ATTR_UPNP_MODEL_NUMBER)
-        self.manufacturer = device_info.get(ssdp.ATTR_UPNP_MANUFACTURER)
+        self._udn = device_info.get(ATTR_UPNP_UDN)
+        self.friendly_name = device_info.get(ATTR_UPNP_FRIENDLY_NAME)
+        self.model_name = device_info.get(ATTR_UPNP_MODEL_NAME)
+        self.model_number = device_info.get(ATTR_UPNP_MODEL_NUMBER)
+        self.manufacturer = device_info.get(ATTR_UPNP_MANUFACTURER)
 
         assert self._udn is not None
         assert self.friendly_name is not None
@@ -220,7 +228,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _async_set_info_from_discovery(
         self,
-        discovery_info: ssdp.SsdpServiceInfo,
+        discovery_info: SsdpServiceInfo,
         raise_on_progress: bool = True,
         abort_if_configured: bool = True,
     ) -> None:
@@ -256,7 +264,7 @@ class MagentaTvFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         return await self.async_step_enter_user_id()
 
-    async def async_step_ssdp(self, discovery_info: ssdp.SsdpServiceInfo) -> FlowResult:
+    async def async_step_ssdp(self, discovery_info: SsdpServiceInfo) -> FlowResult:
         """Handle ssdp discovery flow."""
 
         LOGGER.debug("async_step_ssdp %s", discovery_info)

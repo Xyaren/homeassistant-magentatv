@@ -20,7 +20,7 @@ from .exceptions import (
     PairingTimeoutException,
 )
 from .notify_server import NotifyServer
-from .utils import magneta_hash
+from .utils import magenta_hash
 
 PAIRING_EVENT_TIMEOUT = 5
 PAIRING_ATTEMPTS = 3
@@ -44,9 +44,9 @@ class Client:
 
         self._notify_server = notify_server
 
-        self._terminal_id = magneta_hash(instance_id)
+        self._terminal_id = magenta_hash(instance_id)
 
-        self._user_id = magneta_hash(user_id)
+        self._user_id = magenta_hash(user_id)
         self._requester = AiohttpRequester(http_headers={"User-Agent": "Homeassistant MagentaTV Integration"})
 
         self._verification_code = None
@@ -76,7 +76,7 @@ class Client:
             body = changes.get("messageBody")
             if "X-pairingCheck:" in body:
                 pairing_code = changes.get("messageBody").removeprefix("X-pairingCheck:")
-                self._verification_code = magneta_hash(pairing_code + self._terminal_id + self._user_id)
+                self._verification_code = magenta_hash(pairing_code + self._terminal_id + self._user_id)
                 self._pairing_event.set()
 
     async def _register_for_events(self):
