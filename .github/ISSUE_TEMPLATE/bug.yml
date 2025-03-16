@@ -45,12 +45,13 @@ body:
   attributes:
     label: "Debug logs"
     description: |
-      To enable debug logs debug logs go to the integration page: 
-      [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=magentatv)
+      To enable debug logs debug logs go to the integration page:
       
-      ![Image](https://github.com/user-attachments/assets/5bccb561-fabf-4976-8228-956850585a02)
+      1. [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=magentatv)
+      2. ![Image](https://github.com/user-attachments/assets/5bccb561-fabf-4976-8228-956850585a02)
+      3. When you deactive the debug again, you will directly download a log file.
 
-      When you deactive the debug again, you will directly download a log file.
+      OR
 
       Alternatively enable debug logs via the config and reload/restart homeassistant.
       ```yml
