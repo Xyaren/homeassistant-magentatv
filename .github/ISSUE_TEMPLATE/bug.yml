@@ -32,13 +32,22 @@ body:
         Make sure to include _everything_ from startup of Home Assistant to the point where you encounter the issue.
         If you encounter issues with the entity state not matching the receiver annotate the log manually with your actions and expected entity state.
 
-        To enable debug logs:
+        **To enable debug logs** [(from Home Assistant documentation)](https://www.home-assistant.io/docs/configuration/troubleshooting/#enabling-debug-logging)
 
-        1. [Open the integration configuration secrion in your homeassistant instance](https://my.home-assistant.io/redirect/integration/?domain=magentatv)
-        2. Click on "Enable debug logging"
+        1. [Open the integration page in your homeassistant instance](https://my.home-assistant.io/redirect/integration/?domain=magentatv)
+        2. On the left side of the integration detail page, select *Enable Debug Logging*.
+          <img src="https://github.com/user-attachments/assets/5bccb561-fabf-4976-8228-956850585a02" height="30px"/>
+        3. To see the error in the logs, you need to reproduce the error.
+        4. Disabling the debug logging is the same as enabling, but now the button says *Disable Debug Logging*. After you disable it, you will be automatically prompted you to download your log file.
+          Paste the content of the log file into the textbox. Make sure to check for any sensitive information and remove it before posting.
 
-           <img src="https://github.com/user-attachments/assets/5bccb561-fabf-4976-8228-956850585a02" height="30px"/>
-        3. When you deactive the debug again, you will directly download a log file.
+        **Alternatively** enable debug logs via the config and reload/restart homeassistant.
+        ```yml
+        logger:
+          logs:
+            custom_components.magentatv: debug
+        ```
+        Reproduce the error and copy the log from the log file.
 
         OR
 
@@ -48,6 +57,7 @@ body:
           logs:
             custom_components.magentatv: debug
         ```
+        Reproduce the error and copy the log from the log file.
       render: text
     validations:
       required: true
