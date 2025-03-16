@@ -2,7 +2,7 @@
 name: "Feature request"
 description: "Suggest an idea for this project"
 labels: ["enhancement"]
-type: Enhancement
+#type: Enhancement
 body:
   - type: markdown
     attributes:

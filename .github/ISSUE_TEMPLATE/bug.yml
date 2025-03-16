@@ -2,7 +2,7 @@
 name: "Bug report"
 description: "Report a bug with the integration"
 labels: ["bug"]
-type: Bug
+#type: Bug
 assignees: "Xyaren"
 body:
   - type: markdown
