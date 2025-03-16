@@ -62,7 +62,7 @@ body:
   attributes:
     label: Checklist
     options:
-      - label: I have enabled debug logging for my installation.
+      - label: I have enabled debug logging for my installation and attached the log recorded during the time the issue occured.
         required: true
       - label: I have filled out the issue template to the best of my ability.
         required: true
