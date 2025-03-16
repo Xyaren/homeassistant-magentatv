@@ -48,16 +48,6 @@ body:
             custom_components.magentatv: debug
         ```
         Reproduce the error and copy the log from the log file.
-
-        OR
-
-        Alternatively enable debug logs via the config and reload/restart homeassistant.
-        ```yml
-        logger:
-          logs:
-            custom_components.magentatv: debug
-        ```
-        Reproduce the error and copy the log from the log file.
       render: text
     validations:
       required: true
