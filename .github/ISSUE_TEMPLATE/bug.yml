@@ -1,7 +1,8 @@
 ---
 name: "Bug report"
 description: "Report a bug with the integration"
-labels: "Bug"
+labels: "bug"
+assignees: "Xyaren"
 body:
 - type: markdown
   attributes:
@@ -51,10 +52,12 @@ body:
     required: true
 - type: textarea
   attributes:
-    label: "System Health details"
+    label: "System Health details (Optional)"
     description: "Paste the data from the System Health card in Home Assistant (https://www.home-assistant.io//more-info/system-health#github-issues)"
+    placeholder: Optional but can help to indentify an issue faster
   validations:
     required: false
+    
 - type: checkboxes
   attributes:
     label: Checklist
