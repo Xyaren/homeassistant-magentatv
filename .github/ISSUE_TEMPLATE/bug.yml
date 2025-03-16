@@ -44,12 +44,24 @@ body:
 - type: textarea
   attributes:
     label: "Debug logs"
-    description: "To enable debug logs check this https://www.home-assistant.io/integrations/logger/, this **needs** to include _everything_ from startup of Home Assistant to the point where you encounter the issue."
+    description: |
+      To enable debug logs debug logs go to the integration page: 
+      [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=magentatv)
+      
+      ![Image](https://github.com/user-attachments/assets/5bccb561-fabf-4976-8228-956850585a02)
+
+      When you deactive the debug again, you will directly download a log file.
+
+      Alternatively enable debug logs via the config and reload/restart homeassistant.
+      ```yml
+      logger:
+        logs:
+          custom_components.magentatv: debug
+      ```
+
+      Make sure to include _everything_ from startup of Home Assistant to the point where you encounter the issue.
+
+      If you encounter issues with the entity state not matching the receiver annotate the log manually with your actions and expected entity state.
     render: text
   validations:
     required: true
-
-- type: textarea
-  attributes:
-    label: "Diagnostics dump"
-    description: "Drag the diagnostics dump file here. (see https://www.home-assistant.io/integrations/diagnostics/ for info)"
