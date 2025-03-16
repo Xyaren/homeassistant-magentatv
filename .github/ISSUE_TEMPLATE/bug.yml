@@ -32,7 +32,7 @@ body:
       If you encounter issues with the entity state not matching the receiver annotate the log manually with your actions and expected entity state.
 
       To enable debug logs:
-      
+
       1. [Open the integration configuration secrion in your homeassistant instance](https://my.home-assistant.io/redirect/integration/?domain=magentatv)
       2. Click on "Enable debug logging"
 
