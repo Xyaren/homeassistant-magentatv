@@ -37,6 +37,7 @@ body:
         1. [Open the integration page in your homeassistant instance](https://my.home-assistant.io/redirect/integration/?domain=magentatv)
 
         2. On the left side of the integration detail page, select *Enable Debug Logging*.
+
            <img src="https://github.com/user-attachments/assets/5bccb561-fabf-4976-8228-956850585a02" height="30px"/>
 
         3. To see the error in the logs, you need to reproduce the error.
