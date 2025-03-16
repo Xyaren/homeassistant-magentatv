@@ -41,6 +41,7 @@ body:
         4. Disabling the debug logging is the same as enabling, but now the button says *Disable Debug Logging*. After you disable it, you will be automatically prompted you to download your log file.
           Paste the content of the log file into the textbox. Make sure to check for any sensitive information and remove it before posting.
 
+
         **Alternatively** enable debug logs via the config and reload/restart homeassistant.
         ```yml
         logger:
