@@ -1,5 +1,5 @@
 -r ./requirements.txt
-pytest_homeassistant_custom_component~=0.13.224
+pytest_homeassistant_custom_component~=0.12.49
 pip>=21.0,<25.1
 ruff==0.12.1
 colorlog==6.9.0
