@@ -1,3 +1,15 @@
+> ⚠️ **Archived Project – MagentaTV Gen 1 Discontinued**  
+>  
+> Telekom has migrated all new MagentaTV contracts to the newer **MagentaTV (TV & Streaming)** platform and is phasing out the **MagentaTV 1st-Generation** ecosystem.  
+>  
+> - The official MagentaTV Gen 1 app is now only usable with legacy tariffs booked **before February 15, 2024**.  
+> - APIs and receiver firmware used by this integration are no longer maintained by Telekom.  
+> - New customers cannot use the old platform, and existing devices will lose functionality over time.  
+>  
+> Because of these changes, this integration can no longer be supported and has been **archived**.  
+> The repository remains available in read-only mode for historical reference.
+
+
 <img alt="logo" align="right" width="300" height="150" src="https://upload.wikimedia.org/wikipedia/commons/1/13/Magenta_TV_Logo_%282021%29.svg">
 
 # Homeassistant MagentaTV Integration
